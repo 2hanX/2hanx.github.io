@@ -1,0 +1,473 @@
+I"�c<h2 id="urlcheck-v1">urlcheck v1</h2>
+
+<h3 id="源码分析">源码分析</h3>
+
+<p>{% raw %}</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+</pre></td><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">os</span><span class="p">,</span> <span class="n">re</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">flask</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">flask</span><span class="p">.</span><span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">app</span><span class="p">.</span><span class="n">flag</span> <span class="o">=</span> <span class="s">'***CENSORED***'</span>
+<span class="n">app</span><span class="p">.</span><span class="n">re_ip</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">'\A(\d+)\.(\d+)\.(\d+)\.(\d+)\Z'</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">valid_ip</span><span class="p">(</span><span class="n">ip</span><span class="p">):</span>
+	<span class="n">matches</span> <span class="o">=</span> <span class="n">app</span><span class="p">.</span><span class="n">re_ip</span><span class="p">.</span><span class="n">match</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">matches</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">False</span>
+
+	<span class="n">ip</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">matches</span><span class="p">.</span><span class="n">groups</span><span class="p">()))</span>
+	<span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">255</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ip</span><span class="p">)</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">False</span>
+	<span class="c1"># Stay out of my private!
+</span>	<span class="k">if</span> <span class="n">ip</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">127</span><span class="p">]</span> \
+		<span class="ow">or</span> <span class="p">(</span><span class="n">ip</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">172</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ip</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">15</span> <span class="ow">or</span> <span class="n">ip</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">))</span> \
+		<span class="ow">or</span> <span class="p">(</span><span class="n">ip</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">169</span> <span class="ow">and</span> <span class="n">ip</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">254</span><span class="p">)</span> \
+		<span class="ow">or</span> <span class="p">(</span><span class="n">ip</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">192</span> <span class="ow">and</span> <span class="n">ip</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">168</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">False</span>
+	<span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">recursive_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+	<span class="k">if</span> <span class="s">'location'</span> <span class="ow">in</span> <span class="n">r</span><span class="p">.</span><span class="n">headers</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">recursive_count</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">return</span> <span class="s">'&amp;#x1f914;'</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">headers</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'location'</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">valid_ip</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="n">netloc</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+			<span class="k">return</span> <span class="s">'&amp;#x1f914;'</span>
+		<span class="k">return</span> <span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">recursive_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> 
+	<span class="k">return</span> <span class="n">r</span><span class="p">.</span><span class="n">text</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/admin-status'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">admin_status</span><span class="p">():</span>
+	<span class="k">if</span> <span class="n">flask</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">remote_addr</span> <span class="o">!=</span> <span class="s">'127.0.0.1'</span><span class="p">:</span>
+		<span class="k">return</span> <span class="s">'&amp;#x1f97a;'</span>
+	<span class="k">return</span> <span class="n">app</span><span class="p">.</span><span class="n">flag</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/check-status'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_status</span><span class="p">():</span>
+	<span class="n">url</span> <span class="o">=</span> <span class="n">flask</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'url'</span><span class="p">,</span> <span class="s">''</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">valid_ip</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="n">netloc</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+		<span class="k">return</span> <span class="s">'&amp;#x1f97a;'</span>
+	<span class="k">return</span> <span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+	<span class="k">return</span> <span class="s">'''
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/vue"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	&lt;div id="app" class="container"&gt;
+	  &lt;h1&gt;urlcheck v1&lt;/h1&gt;
+	  &lt;div class="input-group input-group-lg mb-3"&gt;
+		&lt;input v-model="url" placeholder="e.g.) http://11.45.148.93/" class="form-control"&gt;
+		&lt;div class="input-group-append"&gt;
+		  &lt;button v-on:click="checkStatus" class="btn btn-primary"&gt;check&lt;/button&gt;
+		&lt;/div&gt;
+	  &lt;/div&gt;
+	  &lt;div v-if="status" class="alert alert-info"&gt;{{ d(status) }}&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;script&gt;
+	  new Vue({
+		el: '#app',
+		data: {url: '', status: ''},
+		methods: {
+		  d: function (s) {
+			let t = document.createElement('textarea')
+			t.innerHTML = s
+			return t.value
+		  },
+		  checkStatus: function () {
+			fetch('/check-status?url=' + this.url)
+			  .then((r) =&gt; r.text())
+			  .then((r) =&gt; {
+				this.status = r
+			  })
+		  }
+		}
+	  })
+	&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+'''</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>{% endraw %}</p>
+
+<p>经过分析，用户输入框输入的 url 传递给 <code class="language-plaintext highlighter-rouge">/check-status?url=</code> 参数，服务端接收到 url ，进行 <code class="language-plaintext highlighter-rouge">valid_ip(urlparse(url).netloc) == False</code> 判断，因此只需要绕过 <code class="language-plaintext highlighter-rouge">valid_ip()</code> 函数，使得执行后面的 <code class="language-plaintext highlighter-rouge">get()</code> 函数即可获得 flag。此外，<code class="language-plaintext highlighter-rouge">valid_ip()</code> 函数中对 IP 地址进行了严格过滤，并且在 <code class="language-plaintext highlighter-rouge">admin-status()</code> 函数中明确 IP 地址为 <code class="language-plaintext highlighter-rouge">127.0.0.1</code>，因此使用<strong>IP地址的八进制表示法</strong>即可绕过</p>
+
+<h3 id="payload">payload</h3>
+
+<table>
+  <tbody>
+    <tr>
+      <td>![3]({{ ‘/assets/img/posts/tokyowesterns/tokyowesterns_3.png’</td>
+      <td>prepend: site.url }})</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="urlcheck-v2">urlcheck v2</h2>
+
+<h3 id="源码分析-1">源码分析</h3>
+
+<p>{% raw %}</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+</pre></td><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">os</span><span class="p">,</span> <span class="n">re</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">ipaddress</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">flask</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">flask</span><span class="p">.</span><span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+<span class="n">app</span><span class="p">.</span><span class="n">flag</span> <span class="o">=</span> <span class="s">'***CENSORED***'</span>
+
+<span class="k">def</span> <span class="nf">valid_ip</span><span class="p">(</span><span class="n">ip</span><span class="p">):</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">result</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="p">.</span><span class="n">ip_address</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
+		<span class="c1"># Stay out of my private!
+</span>		<span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">is_global</span>
+	<span class="k">except</span><span class="p">:</span>
+		<span class="k">return</span> <span class="bp">False</span>
+
+<span class="k">def</span> <span class="nf">valid_fqdn</span><span class="p">(</span><span class="n">fqdn</span><span class="p">):</span>
+	<span class="k">return</span> <span class="n">valid_ip</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="n">fqdn</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">recursive_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+	<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+	<span class="k">if</span> <span class="s">'location'</span> <span class="ow">in</span> <span class="n">r</span><span class="p">.</span><span class="n">headers</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">recursive_count</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">return</span> <span class="s">'&amp;#x1f914;'</span>
+		<span class="n">url</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">headers</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'location'</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">valid_fqdn</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="n">netloc</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+			<span class="k">return</span> <span class="s">'&amp;#x1f914;'</span>
+		<span class="k">return</span> <span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">recursive_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">r</span><span class="p">.</span><span class="n">text</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/admin-status'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">admin_status</span><span class="p">():</span>
+	<span class="k">print</span><span class="p">(</span><span class="s">'Remote Address:'</span><span class="p">,</span> <span class="n">flask</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">remote_addr</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">flask</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">remote_addr</span> <span class="o">!=</span> <span class="s">'127.0.0.1'</span><span class="p">:</span>
+		<span class="k">return</span> <span class="s">'&amp;#x1f97a;'</span>
+	<span class="k">return</span> <span class="n">app</span><span class="p">.</span><span class="n">flag</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/check-status'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_status</span><span class="p">():</span>
+	<span class="n">url</span> <span class="o">=</span> <span class="n">flask</span><span class="p">.</span><span class="n">request</span><span class="p">.</span><span class="n">args</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'url'</span><span class="p">,</span> <span class="s">''</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">valid_fqdn</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="n">netloc</span><span class="p">)</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+		<span class="k">return</span> <span class="s">'&amp;#x1f97a;'</span>
+	<span class="k">return</span> <span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+	<span class="k">return</span> <span class="s">'''
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/vue"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	&lt;div id="app" class="container"&gt;
+	  &lt;h1&gt;urlcheck v2&lt;/h1&gt;
+	  &lt;div class="input-group input-group-lg mb-3"&gt;
+		&lt;input v-model="url" placeholder="e.g.) http://westerns.tokyo/" class="form-control"&gt;
+		&lt;div class="input-group-append"&gt;
+		  &lt;button v-on:click="checkStatus" class="btn btn-primary"&gt;check&lt;/button&gt;
+		&lt;/div&gt;
+	  &lt;/div&gt;
+	  &lt;div v-if="status" class="alert alert-info"&gt;{{ d(status) }}&lt;/div&gt;
+	&lt;/div&gt;
+	&lt;script&gt;
+	  new Vue({
+		el: '#app',
+		data: {url: '', status: ''},
+		methods: {
+		  d: function (s) {
+			let t = document.createElement('textarea')
+			t.innerHTML = s
+			return t.value
+		  },
+		  checkStatus: function () {
+			fetch('/check-status?url=' + this.url)
+			  .then((r) =&gt; r.text())
+			  .then((r) =&gt; {
+				this.status = r
+			  })
+		  }
+		}
+	  })
+	&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+'''</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>{% endraw %}</p>
+
+<p>前面部分与 urlcheck v1 相同，不同的地方在于服务器端做了 DNS 查询，并且只支持公网地址，另外想要获取 flag，必须访问 <code class="language-plaintext highlighter-rouge">127.0.0.1/admin-status</code> 私有地址。因此该题主要考查的是 <strong>DNS Rebinding（DNS重绑定）</strong>攻击</p>
+
+<p>Google 查询找到已经部署好的<a href="https://lock.cmpxchg8b.com/rebinder.html">地址</a>，将题目地址的IP地址填在 <strong>B</strong> 中</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>![1]({{ ‘/assets/img/posts/tokyowesterns/tokyowesterns_1.png’</td>
+      <td>prepend: site.url }})</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="payload-1">payload</h3>
+
+<table>
+  <tbody>
+    <tr>
+      <td>![2]({{ ‘/assets/img/posts/tokyowesterns/tokyowesterns_2.png’</td>
+      <td>prepend: site.url }})</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="easy-hash">easy-hash</h2>
+
+<h3 id="源码分析-2">源码分析</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+</pre></td><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">MSG</span> <span class="o">=</span> <span class="s">b'twctf: please give me the flag of 2020'</span>
+
+<span class="k">assert</span> <span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="s">'FLAG'</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">easy_hash</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">+=</span> <span class="n">struct</span><span class="p">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">'&lt;I'</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">m</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span>
+
+    <span class="k">return</span> <span class="n">m</span>
+
+<span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">message</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span> <span class="o">!=</span> <span class="s">b'twctf: '</span> <span class="ow">or</span> <span class="n">message</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">!=</span> <span class="s">b'2020'</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">b'invalid message format: '</span> <span class="o">+</span> <span class="n">message</span>
+
+    <span class="k">if</span> <span class="n">message</span> <span class="o">==</span> <span class="n">MSG</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">b'dont cheet'</span>
+
+    <span class="n">msg_hash</span> <span class="o">=</span> <span class="n">easy_hash</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+    <span class="n">expected_hash</span> <span class="o">=</span> <span class="n">easy_hash</span><span class="p">(</span><span class="n">MSG</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">msg_hash</span> <span class="o">==</span> <span class="n">expected_hash</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">'Congrats! The flag is '</span> <span class="o">+</span> <span class="s">"HERE IS THE FLAG"</span>
+    <span class="k">return</span> <span class="s">'Failed: easy_hash({}) is {}. but expected value is {}.'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">msg_hash</span><span class="p">,</span> <span class="n">expected_hash</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>分析源码可以知道，只要 <code class="language-plaintext highlighter-rouge">easy_hash(message) == easy_hash(MSG)</code> 即可，但是 <code class="language-plaintext highlighter-rouge">message</code> 不能和 <code class="language-plaintext highlighter-rouge">MSG(twctf: please give me the flag of 2020)</code>字符串相同</p>
+
+<p>此外，<code class="language-plaintext highlighter-rouge">easy_hash()</code> 函数将字符串分割为每<strong>4</strong>个字符一组，循环相加每4个字符的十进制值，最后再判断是否相等。因此修改其中两个字符，使得相加结果不变即可</p>
+
+<h3 id="payload-2">payload</h3>
+
+<p><code class="language-plaintext highlighter-rouge">curl https://crypto01.chal.ctf.westerns.tokyo -d 'twctf: oleate give me the flag of 2020'</code></p>
+:ET

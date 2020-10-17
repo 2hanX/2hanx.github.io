@@ -1,0 +1,151 @@
+I"�<h3 id="0x0-前言">0x0 前言</h3>
+
+<p>近期看到这样一篇文章<a href="https://linux.cn/article-11648-1.html">《21 个 curl 命令练习》</a>很有意思，同时也想到自己对这款工具了解不多，只是个初级使用者。我们知道熟练的使用一类工具可以无需使用其他同类工具，同时可以减少学习成本，一劳永逸，况且<code class="language-plaintext highlighter-rouge">curl</code>命令行工具支持许多协议，十分强大，可以替代 Postman 这一类的图形界面工具（虽然我也安装了它 (〃’▽’〃)，咳咳）<br />
+本篇文章包括对上篇文章的解答，仅属学习记录，如有错误敬请批评指正</p>
+
+<h3 id="0x1-练习解答">0x1 练习解答</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>问题序号（摘要）</th>
+      <th>命令</th>
+      <th>注解</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><code class="language-plaintext highlighter-rouge">curl https://httpbin.org</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code class="language-plaintext highlighter-rouge">curl https://httpbin.org/anything</code></td>
+      <td>该网站会解析发起的请求，并且在响应中回显；<code class="language-plaintext highlighter-rouge">curl</code>默认发起的请求是<code class="language-plaintext highlighter-rouge">GET</code></td>
+    </tr>
+    <tr>
+      <td>3：发起<code class="language-plaintext highlighter-rouge">GET</code>请求</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -X GET https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>4：添加查询参数</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -G https://httpbin.org/anything -d "value=panda"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-G</code>参数用来构造 URL 的查询字符串，并且发出的是<code class="language-plaintext highlighter-rouge">GET</code>请求</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><code class="language-plaintext highlighter-rouge">curl https://www.google.com/robots.txt</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>6：设置请求头<code class="language-plaintext highlighter-rouge">User-Agent</code></td>
+      <td><code class="language-plaintext highlighter-rouge">curl -X GET -A elephant https://httpbin.org/anything</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-A</code>参数设置用户代理</td>
+    </tr>
+    <tr>
+      <td>7：发起 <code class="language-plaintext highlighter-rouge">DELETE</code> 请求</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -X DELETE https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>8：获取响应头信息</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -I https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>9：发起请求体为 JSON <code class="language-plaintext highlighter-rouge">{"value": "panda"}</code> 的 <code class="language-plaintext highlighter-rouge">POST</code> 请求</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -d '{ "value" : "panda" }' https://httpbin.org/anything</code></td>
+      <td>注意：Windows平台下==里反义，里外都双==（括号内的引号需要<code class="language-plaintext highlighter-rouge">\</code>转义），Linux平台下==里双外单==（内部字符串使用双引号，括号外使用单引号）；此外使用<code class="language-plaintext highlighter-rouge">-d</code>参数以后，HTTP 请求默认会自动加上标头<code class="language-plaintext highlighter-rouge">Content-Type : application/x-www-form-urlencoded</code>，并且会自动将请求转为 <code class="language-plaintext highlighter-rouge">POST</code> 方法，因此可以省略<code class="language-plaintext highlighter-rouge">-X POST</code></td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -X POST -H "Content-Type:application/json" -d '{ "value" : "panda" }' https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -H "Accept-Encoding: gzip" https://httpbin.org/anything</code></td>
+      <td>出现警告信息，提示添加<code class="language-plaintext highlighter-rouge">--output</code>参数保存压缩文件</td>
+    </tr>
+    <tr>
+      <td>12：使用文件传输形式传<code class="language-plaintext highlighter-rouge">JSON</code></td>
+      <td><code class="language-plaintext highlighter-rouge">curl -d @test.json -X POST https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -H "Accept:image/png" https://httpbin.org/image -o test.png</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -X PUT https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td><code class="language-plaintext highlighter-rouge">curl https://httpbin.org/image/jpeg -o test1.jpeg</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -I https://www.twitter.com</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -H "panda:elephant" https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -I https://httpbin.org/status/404</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>19：设置用户名和密码</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -u "username:password" https://httpbin.org/anything</code></td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td><code class="language-plaintext highlighter-rouge">curl -H "Accept-Language:es-ES" https://twitter.com</code></td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="0x2其他">0x2其他</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>命令</th>
+      <th>注解</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">curl --cookie "name=eric" https://httpbin.org/anything</code></td>
+      <td>设置cookie</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">curl -x socks5://{proxy_server} https://httpbin.org/anything</code></td>
+      <td>设置代理</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="0x3-ref">0x3 Ref.</h3>
+
+<ul>
+  <li><a href="https://curl.haxx.se/">curl_tool&amp;library</a></li>
+  <li><a href="https://legacy.gitbook.com/download/pdf/book/bagder/everything-curl">everything-curl-gitbook</a></li>
+</ul>
+:ET

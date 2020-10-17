@@ -1,0 +1,62 @@
+I"<h3 id="1-使用工具将镜像刻录到u盘">1. 使用工具将镜像刻录到U盘</h3>
+
+<ul>
+  <li><a href="https://sourceforge.net/projects/win32diskimager/">win32diskimager</a></li>
+</ul>
+
+<h3 id="2启动kali进入-live-usb-persistence模式">2.启动kali进入 Live USB Persistence模式</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td> --><td class="rouge-code"><pre><span class="c"># 新建新分区</span>
+fdisk <span class="nt">-l</span>
+fdisk /dev/sda
+n
+p
+w
+fdisk <span class="nt">-l</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="3-在新创建的分区上初始化luks加密">3. 在新创建的分区上初始化LUKS加密</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td> --><td class="rouge-code"><pre>cryptsetup <span class="nt">--verbose</span> <span class="nt">--verify-passphrase</span> luksFormat /dev/sda3
+cryptsetup luksOpen /dev/sda3 my_usb
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="4创建-ext4-文件系统并将其标记为持久性">4.创建 ext4 文件系统，并将其标记为“持久性“</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td> --><td class="rouge-code"><pre>mkfs.ext4 <span class="nt">-L</span> persistence /dev/mapper/my_usb 
+e2label /dev/mapper/my_usb persistence
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="5-挂载新加密分区设置persistenceconf文件">5. 挂载新加密分区，设置<strong>persistence.conf</strong>文件</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td> --><td class="rouge-code"><pre><span class="nb">mkdir</span> <span class="nt">-p</span> /mnt/my_usb 
+mount /dev/mapper /my_usb /mnt/my_usb 
+<span class="nb">echo</span> <span class="s2">"/ union"</span> &amp;gt<span class="p">;</span> /mnt/my_usb/persistence.conf 
+umount /dev/mapper/my_usb
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="6-关闭加密通道">6. 关闭加密通道</h3>
+
+<p><code class="language-plaintext highlighter-rouge">cryptsetup luksClose /dev/mapper/my_usb</code></p>
+
+<h4 id="ref">Ref.</h4>
+
+<ul>
+  <li><a href="https://docs.kali.org/downloading/kali-linux-live-usb-persistence">Kali official docs</a></li>
+</ul>
+:ET

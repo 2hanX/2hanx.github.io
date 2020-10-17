@@ -1,0 +1,118 @@
+I"<p>为了方便地使用Wireshark附带的命令行工具，在此之前建议将本地Wireshark安装目录的路径添加到系统环境变量中，接下来让我们看看Wireshark附带的以下更有用的命令行实用程序：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">tshark</code></li>
+  <li><code class="language-plaintext highlighter-rouge">capinfos</code></li>
+  <li><code class="language-plaintext highlighter-rouge">mergecap</code></li>
+  <li><code class="language-plaintext highlighter-rouge">editcap</code></li>
+</ul>
+
+<blockquote>
+  <p>每个命令行程序都可加 <code class="language-plaintext highlighter-rouge">-h</code> 参数查看详细操作手册</p>
+</blockquote>
+
+<h3 id="tshark">tshark</h3>
+
+<p><code class="language-plaintext highlighter-rouge">tshark</code>用于捕获数据包，并且也可以在我们没有使用交互式用户界面的权限时或者担心数据丢包的情况下使用。因为在网络上充斥大量数据包的情况下，Wireshark的捕获引擎可能无法通过接口进行大量快速捕获数据包，并且随时可能会崩溃或无响应。因此使用<code class="language-plaintext highlighter-rouge">tshark</code>捕获此类流量是一个明智的选择</p>
+
+<h4 id="选择网卡">选择网卡</h4>
+
+<p><code class="language-plaintext highlighter-rouge">tshark -D</code><sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup></p>
+
+<h4 id="开始抓取数据包">开始抓取数据包</h4>
+
+<p><code class="language-plaintext highlighter-rouge">tshark –i 2</code> <sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup></p>
+
+<h4 id="停止抓取数据包">停止抓取数据包</h4>
+
+<ul>
+  <li>手动停止：<code class="language-plaintext highlighter-rouge">Ctrl + C</code></li>
+  <li>自动停止：<code class="language-plaintext highlighter-rouge">tshark –i 2 –a duration:10</code> <sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote">3</a></sup></li>
+</ul>
+
+<h4 id="保存数据包">保存数据包</h4>
+
+<p><code class="language-plaintext highlighter-rouge">tshark –i 2 –w Capture.pcap</code></p>
+
+<h4 id="过滤">过滤</h4>
+
+<ul>
+  <li>抓取时过滤：<code class="language-plaintext highlighter-rouge">tshark –i 2 –f "dhcp" –w DHCP.pcap</code></li>
+  <li>本地读文件时过滤：<code class="language-plaintext highlighter-rouge">tshark -2 –R "http" –r Traffic.pcap –w HTTP.pcap</code></li>
+</ul>
+
+<blockquote>
+  <p>常用过滤命令：</p>
+
+  <ul>
+    <li><code class="language-plaintext highlighter-rouge">ftp.request.command == "PASS"</code></li>
+    <li><code class="language-plaintext highlighter-rouge">ftp.request.command == "USER"</code></li>
+    <li><code class="language-plaintext highlighter-rouge">http.request.method == "GET"</code></li>
+  </ul>
+</blockquote>
+
+<h4 id="协议分层统计">协议分层统计</h4>
+
+<p><code class="language-plaintext highlighter-rouge">tshark –r Traffic.pcap –qz io,phs</code><sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote">4</a></sup></p>
+
+<h3 id="capinfos">capinfos</h3>
+
+<p><code class="language-plaintext highlighter-rouge">capinfos</code>用于读取一个或多个捕获文件并返回一些或全部可用统计信息</p>
+
+<p><code class="language-plaintext highlighter-rouge">capinfos Traffic.pcap</code></p>
+
+<h3 id="mergecap">mergecap</h3>
+
+<p><code class="language-plaintext highlighter-rouge">mergecap</code>主要用于将多个捕获文件组合到单个输出文件中</p>
+
+<p><code class="language-plaintext highlighter-rouge">mergecap capture1.pcap capture2.pcap -w traffic.pcap</code></p>
+
+<h3 id="editcap">editcap</h3>
+
+<p><code class="language-plaintext highlighter-rouge">editcap</code> 主要用于修改捕获文件，例如将大文件拆分为多个文件；从文件中删除重复数据包；将捕获文件从一种格式转换为另一种格式</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">editcap –d Duplicates.pcap NoDuplicates.pcap</code> <sup id="fnref:5" role="doc-noteref"><a href="#fn:5" class="footnote">5</a></sup></li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">editcap -c 10 ftp.pcap ftp1.pcap</code><sup id="fnref:6" role="doc-noteref"><a href="#fn:6" class="footnote">6</a></sup></p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">editcap -F</code><sup id="fnref:7" role="doc-noteref"><a href="#fn:7" class="footnote">7</a></sup></p>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">editcap -F pcap example.erf transter.pcap</code></li>
+</ul>
+
+<h3 id="ref">Ref.</h3>
+
+<ul>
+  <li><a href="https://www.wireshark.org/docs/man-pages/">wireshark docs</a></li>
+</ul>
+
+<hr />
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>列出本地网络接口 <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>选择想要使用并开始截获流量的接口（这里以太网卡序号是2） <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>开始抓取数据包<code class="language-plaintext highlighter-rouge">10s</code>后自动停止 <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p>显示 <code class="language-plaintext highlighter-rouge">Protocol Hierarchy Statistics</code> <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:5" role="doc-endnote">
+      <p>尝试删除重复数据包；将当前分组的长度和MD5散列与先前的四个分组进行比较，如果找到匹配项，则跳过当前数据包；此选项相当于使用选项<code class="language-plaintext highlighter-rouge">-D 5</code> <a href="#fnref:5" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:6" role="doc-endnote">
+      <p>分割<code class="language-plaintext highlighter-rouge">ftp.pcap</code>文件，保存为<code class="language-plaintext highlighter-rouge">ftp1_xxx.pcap</code>文件集，每个文件有10个数据包 <a href="#fnref:6" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:7" role="doc-endnote">
+      <p><code class="language-plaintext highlighter-rouge">-F</code> 命令可以列出所有支持的格式 <a href="#fnref:7" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+:ET

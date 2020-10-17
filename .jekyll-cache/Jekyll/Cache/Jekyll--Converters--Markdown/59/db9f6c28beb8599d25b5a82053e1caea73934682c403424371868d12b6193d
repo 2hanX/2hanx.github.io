@@ -1,0 +1,36 @@
+I"<p>在之前的文章中我们制作了持久化USB版Kali，接下来我们就可以安装必备软件之一：Nessus</p>
+
+<h3 id="下载"><a href="https://www.tenable.com/downloads/nessus">下载</a></h3>
+
+<h3 id="注册"><a href="https://zh-cn.tenable.com/products/nessus/nessus-essentials?tns_redirect=true">注册</a></h3>
+
+<h3 id="获取激活码"><a href="https://zh-cn.tenable.com/products/nessus/activation-code?tns_redirect=true">获取激活码</a></h3>
+
+<h3 id="安装">安装</h3>
+
+<p><code class="language-plaintext highlighter-rouge">dpkg -i Nessus-xxx.deb</code></p>
+
+<h3 id="启动">启动</h3>
+
+<p><code class="language-plaintext highlighter-rouge">/etc/init.d/nessusd start</code></p>
+
+<h3 id="访问web界面">访问web界面</h3>
+
+<p><code class="language-plaintext highlighter-rouge">https://localhost:8834</code></p>
+
+<h3 id="下载插件">下载插件</h3>
+
+<ul>
+  <li>方法一：web界面</li>
+  <li>方法二：<code class="language-plaintext highlighter-rouge">opt/nessus/sbin/nessuscli update</code></li>
+  <li>方法三：离线安装
+    <ol>
+      <li>生成挑战码：<code class="language-plaintext highlighter-rouge">/opt/nessus/sbin/nessuscli fetch --challenge</code></li>
+      <li>提交信息：<code class="language-plaintext highlighter-rouge">https://plugins.nessus.org/v2/offline.php</code></li>
+      <li>下载文件后复制到目录：<code class="language-plaintext highlighter-rouge">/opt/nessus/sbin/</code>；执行<code class="language-plaintext highlighter-rouge">./nessuscli fetch --register-offline nessus.license</code></li>
+      <li>安装插件：<code class="language-plaintext highlighter-rouge">./nessuscli update all-2.0.tar.gz</code></li>
+      <li>重启：<code class="language-plaintext highlighter-rouge">./nessusd</code></li>
+    </ol>
+  </li>
+</ul>
+:ET

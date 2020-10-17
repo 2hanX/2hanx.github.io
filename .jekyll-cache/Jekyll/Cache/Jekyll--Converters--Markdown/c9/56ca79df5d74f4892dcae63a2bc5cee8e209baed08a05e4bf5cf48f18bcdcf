@@ -1,0 +1,80 @@
+I"�<h3 id="0x0-题目">0x0 题目</h3>
+
+<p>BugkuCTF <a href="https://ctf.bugku.com/files/195eea16a36594dcb1b0ea7015d68973/5b0b08e0-31aa-4a8d-ae19-89b843554506.zip">日志分析</a></p>
+
+<h3 id="0x1-分析">0x1 分析</h3>
+
+<p><code class="language-plaintext highlighter-rouge">head access.log</code></p>
+
+<p>粗看文件内容是进行本地SQL盲注，并且日志格式规范，大致想法也就是进行格式匹配输出</p>
+
+<p><code class="language-plaintext highlighter-rouge">cat access.log | grep flag &gt; flag</code></p>
+
+<p>果然出现<code class="language-plaintext highlighter-rouge">dvwa.flag_is_here</code>字段，经过URL解码后我们明显可以看出是字符暴力破解</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="rouge-code"><pre><span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">os</span><span class="p">.</span><span class="n">system</span><span class="p">(</span><span class="s">"cat access.log | grep flag | grep -v 404 | awk -F '</span><span class="se">\"</span><span class="s">' '{print $2}' &amp;gt; flag"</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">'flag1'</span><span class="p">,</span><span class="s">'w'</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s">'utf-8'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f1</span><span class="p">:</span>
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">'flag'</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s">'utf-8'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f2</span><span class="p">:</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+      <span class="n">tmp</span> <span class="o">=</span> <span class="n">f2</span><span class="p">.</span><span class="n">read</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">tmp</span><span class="p">:</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">parse</span><span class="p">.</span><span class="n">unquote</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+        <span class="n">f1</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span> 
+        <span class="k">break</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),1,1))&amp;gt;64 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),1,1))&amp;gt;96 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),1,1))&amp;gt;100 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),1,1))&amp;gt;101 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),2,1))&amp;gt;96 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+GET /vulnerabilities/sqli_blind/?id<span class="o">=</span>2<span class="s1">' AND ORD(MID((SELECT IFNULL(CAST(flag AS CHAR),0x20) FROM dvwa.flag_is_here ORDER BY flag LIMIT 0,1),2,1))&amp;gt;104 AND '</span>RCKM<span class="s1">'='</span>RCKM&amp;Submit<span class="o">=</span>Submit HTTP/1.1
+......
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="0x2-取键">0x2 取键</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nb">cat </span>flag1 | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s1">','</span> <span class="s1">'{print $4}'</span> | <span class="nb">tail</span> <span class="nt">-n</span> +2
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="0x3-取值">0x3 取值</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nb">cat </span>flag1 | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s1">'&amp;gt;'</span> <span class="s1">'{print $2}'</span> | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s1">' '</span> <span class="s1">'{print $1}'</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="0x4-结果">0x4 结果</h3>
+
+<p>取相同的键中最高的值再加1，也就是破解的ASCII对应的十进制值，将其转换成ASCII值即可</p>
+
+<h3 id="总结">总结</h3>
+
+<p>本来想写一个完整的 python 脚本，把键和值放在 <code class="language-plaintext highlighter-rouge">dict</code>字典里，多次尝试无果，最后发现自己实在太菜了…… 🙁</p>
+:ET

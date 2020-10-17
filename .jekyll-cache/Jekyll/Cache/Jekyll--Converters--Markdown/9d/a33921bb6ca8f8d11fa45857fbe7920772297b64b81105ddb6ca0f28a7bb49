@@ -1,0 +1,185 @@
+I"#<h2 id="easy-crack">Easy Crack</h2>
+
+<h3 id="分析">分析</h3>
+
+<p>使用 ExeinfoPE 工具分析没有进行加壳
+使用 file 工具得知是 32 位 windows GUI 程序
+运行程序发现是注册码破解，并且输错后会有错误信息提示，因此是常见的入门级逆向题目</p>
+
+<h3 id="exp">exp</h3>
+
+<p>使用 IDA 打开分析，首先查看 string 字符串，找到 <code class="language-plaintext highlighter-rouge">Congratulation !!</code>字符串，通过调用关系定位到 <code class="language-plaintext highlighter-rouge">sub_401080()</code> 函数处，因此我们的目的就是逆向该函数即可得到flag</p>
+
+<p><img src="http://localhost:4000/assets/img/posts/reversing_kr/easy_crack.png" alt="1" /></p>
+
+<p>根据 IDA 的逆向结果可以清楚分析代码逻辑：if 语句通过4个判断来输出正确或错误结果，其中
+<code class="language-plaintext highlighter-rouge">strncmp()</code>函数功能是比较两个字符串，<code class="language-plaintext highlighter-rouge">MessageBoxA</code> 函数是输出结果。</p>
+
+<h3 id="flag">flag</h3>
+
+<p><code class="language-plaintext highlighter-rouge">Ea5yR3versing</code></p>
+
+<h2 id="easy-keygen">Easy Keygen</h2>
+
+<h3 id="分析-1">分析</h3>
+
+<p>题目的提示信息</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td> --><td class="rouge-code"><pre>ReversingKr KeygenMe
+Find the Name when the Serial is 5B134977135E7D13
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>使用 file 工具得知是 32 位 windows console 程序
+看来是需要我们找到 <code class="language-plaintext highlighter-rouge">Name</code> 才能拿到 flag</p>
+
+<h3 id="exp-1">exp</h3>
+
+<p><img src="http://localhost:4000/assets/img/posts/reversing_kr/easy_keygen.png" alt="2" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td> --><td class="rouge-code"><pre><span class="n">v13</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x5B</span><span class="p">,</span> <span class="mh">0x13</span><span class="p">,</span> <span class="mh">0x49</span><span class="p">,</span> <span class="mh">0x77</span><span class="p">,</span> <span class="mh">0x13</span><span class="p">,</span> <span class="mh">0x5E</span><span class="p">,</span> <span class="mh">0x7D</span><span class="p">,</span> <span class="mh">0x13</span><span class="p">]</span>
+
+<span class="n">v6</span> <span class="o">=</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">flag</span> <span class="o">=</span> <span class="s">""</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v13</span><span class="p">)):</span>
+    <span class="n">flag</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">v13</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^</span> <span class="n">v6</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="flag-1">flag</h3>
+
+<p><code class="language-plaintext highlighter-rouge">K3yg3nm3</code></p>
+
+<hr />
+
+<blockquote>
+  <p><em>update: 2020-10-04</em></p>
+</blockquote>
+
+<h2 id="easy-unpack">Easy Unpack</h2>
+
+<h3 id="分析-2">分析</h3>
+
+<p>使用 ExeinfoPE 工具分析发现程序加了壳，但不确定是哪种，此外根据题目的提示信息</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td> --><td class="rouge-code"><pre>ReversingKr UnpackMe
+Find the OEP
+ex) 00401000
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>目的是需要我们找到程序的 OEP。 用 OD 打开，并用单步跟踪法找到 OEP</p>
+
+<h3 id="exp-2">exp</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td> --><td class="rouge-code"><pre>00401150  /.  55            PUSH EBP
+00401151  |.  8BEC          MOV EBP,ESP
+00401153  |.  6A FF         PUSH <span class="nt">-1</span>
+00401155  |.  68 D0504000   PUSH Easy_Unp.004050D0
+0040115A  |.  68 1C1E4000   PUSH Easy_Unp.00401E1C                   <span class="p">;</span>  SE 处理程序安装
+0040115F  |.  64:A1 0000000&gt;MOV EAX,DWORD PTR FS:[0]
+00401165  |.  50            PUSH EAX
+00401166  |.  64:8925 00000&gt;MOV DWORD PTR FS:[0],ESP
+0040116D  |.  83EC 58       SUB ESP,58
+00401170  |.  53            PUSH EBX
+00401171  |.  56            PUSH ESI
+00401172  |.  57            PUSH EDI
+00401173  |.  8965 E8       MOV DWORD PTR SS:[EBP-18],ESP
+00401176  |.  FF15 3C504000 CALL DWORD PTR DS:[40503C]               <span class="p">;</span>  KERNEL32.GetVersion
+0040117C  |.  33D2          XOR EDX,EDX
+0040117E  |.  8AD4          MOV DL,AH
+00401180  |.  8915 E8844000 MOV DWORD PTR DS:[4084E8],EDX
+</pre></td></tr></tbody></table></code></pre></div></div>
+<h3 id="flag-2">flag</h3>
+
+<p><code class="language-plaintext highlighter-rouge">00401150</code></p>
+
+<h2 id="music-player">Music Player</h2>
+
+<h3 id="分析-3">分析</h3>
+
+<p>根据题目提供的信息得知</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td> --><td class="rouge-code"><pre>This MP3 Player is limited to 1 minutes.
+You have to play more than one minute.
+
+There are exist several 1-minute-check-routine.
+After bypassing every check routine, you will see the perfect flag.
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>需要我们破解这个MP3播放器，使其能够播放一分钟以上，此外每播放一分钟会有一次check。试着播放音频，果然一分钟后会出现弹窗</p>
+
+<p><img src="http://localhost:4000/assets/img/posts/reversing_kr/music_player.png" alt="3" /></p>
+
+<p>注意到弹窗中信息有个数字 <code class="language-plaintext highlighter-rouge">1</code>，后续定位弹窗时搜索字符串试试</p>
+
+<h3 id="exp-3">exp</h3>
+
+<ol>
+  <li>
+    <p>破解第一个弹窗</p>
+
+    <p>使用 OD 插件中的 <code class="language-plaintext highlighter-rouge">超级字串参考插件</code> 搜索ASCII字符串 <code class="language-plaintext highlighter-rouge">1</code> 后找到两个地方，但第一个才是正确的，接着我们在该地址下个断点，并且在后面发现 <code class="language-plaintext highlighter-rouge">rtcMsgBox</code> 函数</p>
+
+    <p><img src="http://localhost:4000/assets/img/posts/reversing_kr/music_player_1.png" alt="4" /></p>
+
+    <p><img src="http://localhost:4000/assets/img/posts/reversing_kr/music_player_2.png" alt="5" /></p>
+
+    <p>此外在上面找到跳转函数 <code class="language-plaintext highlighter-rouge">JL Music_Pl.004045FE</code>，因为我们需要将程序流程跳过该弹窗，因此修改指令为<code class="language-plaintext highlighter-rouge">jmp 004045FE</code> 无条件跳转。
+ 之后选择修改区域，右键 <code class="language-plaintext highlighter-rouge">复制到可执行文件</code> 后保存文件，运行后出现第二个弹窗</p>
+
+    <p><img src="http://localhost:4000/assets/img/posts/reversing_kr/music_player_3.png" alt="6" /></p>
+  </li>
+  <li>
+    <p>破解第二个弹窗</p>
+
+    <p>使用 OD 打开修改后的程序，在原先跳转的地方下断点。 并且在将歌曲播放至59秒时暂停，这个程序暂停，再次点击播放按钮后会运行至断点处。后面相同的操作找到第二个弹窗位置，将代码修改为 <code class="language-plaintext highlighter-rouge">jmp 004046BF</code> 即可。保存文件点击运行即可看到 flag</p>
+  </li>
+</ol>
+
+<h3 id="flag-3">flag</h3>
+
+<p><code class="language-plaintext highlighter-rouge">LIstenCare</code></p>
+
+<h2 id="ref">Ref.</h2>
+
+<ul>
+  <li><a href="http://www.reversing.kr/challenge.php">题目地址</a></li>
+</ul>
+
+:ET

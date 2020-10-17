@@ -1,0 +1,84 @@
+I"|<h3 id="0x0-基础分析">0x0 基础分析</h3>
+
+<ol>
+  <li>
+    <p>源/宿地址 <sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote">1</a></sup>
+    判断源/宿地址比较容易，根据Wireshark的统计功能即可判断：<code class="language-plaintext highlighter-rouge">Statistics</code>→<code class="language-plaintext highlighter-rouge">Conversations</code>→<code class="language-plaintext highlighter-rouge">TCP</code>，一般位于<code class="language-plaintext highlighter-rouge">Address A</code>的地址就是源地址。当然如果不放心，可以过滤<code class="language-plaintext highlighter-rouge">http.request</code>查看发起请求的一方</p>
+  </li>
+  <li>
+    <p>协议统计 <sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote">2</a></sup>
+    使用的协议有很多，我们可以根据传输数据包的多少进行高低排序，把主要的注意力放在流量多的一方。当然，我们得首先查看<code class="language-plaintext highlighter-rouge">HTTP</code>协议</p>
+  </li>
+  <li>
+    <p>HTTP请求 <sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote">3</a></sup></p>
+  </li>
+</ol>
+
+<p><img src="https://i.loli.net/2019/10/06/ZwXVTqDJFoEId23.png" alt="http_requests.png" /></p>
+
+<p>逐个分析请求流，发现最有价值的是<code class="language-plaintext highlighter-rouge">/xinhu/abc/abc.html</code>。继续跟进得到以下重要信息</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td> --><td class="rouge-code"><pre>md5 0x99a98e067af6b09e64f3740767096c96
+DES 0xb19b21e80c685bcb052988c11b987802d2f2808b2c2d8a0d   <span class="o">(</span>129-&amp;gt<span class="p">;</span>143<span class="o">)</span>
+DES 0x684a0857b767672d52e161aa70f6bdd07c0264876559cb8b   <span class="o">(</span>143-&amp;gt<span class="p">;</span>129<span class="o">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="ox1-提取文件">ox1 提取文件</h3>
+
+<p>我们知道数据流中传输的文件名称，即使根据它的名称认为没有什么作用，但是为了消除迷惑的可能性还是应该将这些文件提取出来，较为快速的方法就是使用<code class="language-plaintext highlighter-rouge">foremost</code>工具</p>
+
+<h3 id="0x2-wireshark解密esp">0x2 Wireshark解密ESP</h3>
+
+<p>继续向下分析，发现都是 IPSec 加密后的流量（<code class="language-plaintext highlighter-rouge">ESP</code>），范围在<code class="language-plaintext highlighter-rouge">786~1583</code>。接下来我们就需要使用 Wireshark 解密数据流量，定位到<code class="language-plaintext highlighter-rouge">Preferences</code>→<code class="language-plaintext highlighter-rouge">Protocols</code>→<code class="language-plaintext highlighter-rouge">ESP（Encapsulating Security Payload）</code>→<code class="language-plaintext highlighter-rouge">ESP SAs</code>，填写以下信息之后就可以看到解密后的信息</p>
+
+<p><img src="https://i.loli.net/2019/10/06/r8hJ6m3I15tyija.png" alt="ESP_Sas.png" /></p>
+
+<h3 id="0x3-编写脚本">0x3 编写脚本</h3>
+
+<p>比较有意思的是发现在部分 http 请求中夹杂 ASCII 码，因此进行转码就可以得到 flag</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><!-- <td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td> --><td class="rouge-code"><pre><span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="mi">102</span><span class="p">,</span><span class="mi">108</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">103</span><span class="p">,</span><span class="mi">123</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">48</span><span class="p">,</span><span class="mi">51</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">53</span><span class="p">,</span><span class="mi">56</span><span class="p">,</span><span class="mi">102</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">53</span><span class="p">,</span><span class="mi">53</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">54</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">53</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">57</span><span class="p">,</span><span class="mi">56</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">97</span><span class="p">,</span><span class="mi">48</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">49</span><span class="p">,</span><span class="mi">57</span><span class="p">,</span><span class="mi">52</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">125</span><span class="p">]</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="s">''</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
+    <span class="n">s1</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="0x4-总结">0x4 总结</h3>
+
+<ol>
+  <li>ASCII 码藏在 HTTP 请求中，需要进行转码</li>
+  <li>可以使用 Wireshark 对加密的流量进行解密，并且需要填写秘钥等信息</li>
+</ol>
+
+<h3 id="ref">Ref.</h3>
+
+<ul>
+  <li><a href="https://wiki.wireshark.org/ESP_Preferences">Wireshark ESP_Preferences</a></li>
+  <li><a href="https://wenku.baidu.com/view/384e5dc548649b6648d7c1c708a1284ac85005b0.html">IPSec VPN详解</a></li>
+</ul>
+
+<hr />
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>源地址：<code class="language-plaintext highlighter-rouge">192.168.207.129</code>；宿地址：<code class="language-plaintext highlighter-rouge">192.168.207.143</code> <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p><code class="language-plaintext highlighter-rouge">Statistics</code>→<code class="language-plaintext highlighter-rouge">Protocol Hierarchy</code> <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>显示较为明确的方法：<code class="language-plaintext highlighter-rouge">Statistics</code>→<code class="language-plaintext highlighter-rouge">HTTP</code>→<code class="language-plaintext highlighter-rouge">Requests</code> <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+:ET
