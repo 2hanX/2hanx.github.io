@@ -1,0 +1,625 @@
+<!DOCTYPE html><html lang="en" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><title>AES ECB 模式攻击 | 2hanX</title><meta name="generator" content="Jekyll v4.1.1" /><meta property="og:title" content="AES ECB 模式攻击" /><meta name="author" content="2hanx" /><meta property="og:locale" content="en_US" /><meta name="description" content="对称/分组密码一般分为流加密(如OFB、CFB等)和块加密(如ECB、CBC等)，对于流加密，需要将分组密码转化为流模式工作；对于块加密(或称分组加密)，如果要加密超过块大小的数据，就需要涉及填充和链加密模式" /><meta property="og:description" content="对称/分组密码一般分为流加密(如OFB、CFB等)和块加密(如ECB、CBC等)，对于流加密，需要将分组密码转化为流模式工作；对于块加密(或称分组加密)，如果要加密超过块大小的数据，就需要涉及填充和链加密模式" /><link rel="canonical" href="http://localhost:4000/posts/aes-ecb-attack/" /><meta property="og:url" content="http://localhost:4000/posts/aes-ecb-attack/" /><meta property="og:site_name" content="2hanX" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2020-09-28T00:00:00+08:00" /> <script type="application/ld+json"> {"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/posts/aes-ecb-attack/"},"author":{"@type":"Person","name":"2hanx"},"description":"对称/分组密码一般分为流加密(如OFB、CFB等)和块加密(如ECB、CBC等)，对于流加密，需要将分组密码转化为流模式工作；对于块加密(或称分组加密)，如果要加密超过块大小的数据，就需要涉及填充和链加密模式","headline":"AES ECB 模式攻击","dateModified":"2020-09-28T00:00:00+08:00","@type":"BlogPosting","datePublished":"2020-09-28T00:00:00+08:00","url":"http://localhost:4000/posts/aes-ecb-attack/","@context":"https://schema.org"}</script><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico" type="image/x-icon"><link rel="icon" href="/assets/img/favicons/favicon.ico" type="image/x-icon"><link rel="apple-touch-icon" href="/assets/img/favicons/apple-icon.png"><link rel="apple-touch-icon" href="/assets/img/favicons/apple-icon-precomposed.png"><link rel="apple-touch-icon" sizes="57x57" href="/assets/img/favicons/apple-icon-57x57.png"><link rel="apple-touch-icon" sizes="60x60" href="/assets/img/favicons/apple-icon-60x60.png"><link rel="apple-touch-icon" sizes="72x72" href="/assets/img/favicons/apple-icon-72x72.png"><link rel="apple-touch-icon" sizes="76x76" href="/assets/img/favicons/apple-icon-76x76.png"><link rel="apple-touch-icon" sizes="114x114" href="/assets/img/favicons/apple-icon-114x114.png"><link rel="apple-touch-icon" sizes="120x120" href="/assets/img/favicons/apple-icon-120x120.png"><link rel="apple-touch-icon" sizes="144x144" href="/assets/img/favicons/apple-icon-144x144.png"><link rel="apple-touch-icon" sizes="152x152" href="/assets/img/favicons/apple-icon-152x152.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-icon-180x180.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicons/android-icon-192x192.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="96x96" href="/assets/img/favicons/favicon-96x96.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/manifest.json"><meta name='msapplication-config' content='/assets/img/favicons/browserconfig.xml'><meta name="msapplication-TileColor" content="#ffffff"><meta name="msapplication-TileImage" content="/assets/img/favicons/ms-icon-144x144.png"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link rel="dns-prefetch" href="https://fonts.gstatic.com"><link rel="preconnect" href="cdn.jsdelivr.net"><link rel="dns-prefetch" href="cdn.jsdelivr.net"><link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20=" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20=" crossorigin="anonymous"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css" integrity="sha256-+N4/V/SbAFiW1MPBCXnfnP9QSN3+Keu+NlB+0ev/YKQ=" crossorigin="anonymous"><link rel="preload" as="style" href="/assets/css/post.css"><link rel="stylesheet" href="/assets/css/post.css"><link rel="preload" as="style" href="/assets/css/lib/bootstrap-toc.min.css"><link rel="stylesheet" href="/assets/css/lib/bootstrap-toc.min.css" /><link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/jquery@3.4.1" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"> <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script> <script src="https://cdn.jsdelivr.net/combine/npm/popper.js@1.15.0,npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" async></script> <script src="/assets/js/post.min.js" async></script><body data-spy="scroll" data-target="#toc"><div id="sidebar" class="d-flex flex-column"><div id="nav-wrapper"><div id="profile-wrapper" class="d-flex flex-column"><div id="avatar" class="d-flex justify-content-center"> <a href="/" alt="avatar"> <img src="/assets/img/favicons/avatar.jpg" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="profile-text mt-3"><div class="site-title"> <a href="/">2hanX</a></div><div class="site-subtitle font-italic">潜心/虚心</div></div></div><ul class="nav flex-column"><li class="nav-item d-flex justify-content-center "> <a href="/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>HOME</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/categories/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>CATEGORIES</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/tags/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-tags ml-xl-3 mr-xl-3 unloaded"></i> <span>TAGS</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/archives/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>ARCHIVES</span> </a><li class="nav-item d-flex justify-content-center "> <a href="/tabs/about/" class="nav-link d-flex justify-content-center align-items-center w-100"> <i class="fa-fw fas fa-info ml-xl-3 mr-xl-3 unloaded"></i> <span>ABOUT</span> </a></ul></div><div class="sidebar-bottom d-flex flex-wrap justify-content-around mt-4"> <span id="mode-toggle-wrapper"> <i class="mode-toggle fas fa-sun" dark-mode-invisible></i> <i class="mode-toggle fas fa-moon" light-mode-invisible></i> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } constructor() { if (this.mode != null) { if (this.mode == ModeToggle.DARK_MODE) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } var self = this; /* always follow the system prefers */ this.sysDarkPrefers.addListener(function() { if (self.mode != null) { if (self.mode == ModeToggle.DARK_MODE) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } }); } /* constructor() */ setDark() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_KEY); sessionStorage.removeItem(ModeToggle.MODE_KEY); } get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode == ModeToggle.DARK_MODE; } get isLightkMode() { return this.mode == ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } flipMode() { if (this.hasMode) { if (this.isSysDarkPrefer) { if (this.isLightkMode) { this.clearMode(); } else { this.setLight(); } } else { if (this.isDarkMode) { this.clearMode(); } else { this.setDark(); } } } else { if (this.isSysDarkPrefer) { this.setLight(); } else { this.setDark(); } } } /* flipMode() */ } /* ModeToggle */ let toggle = new ModeToggle(); $(".mode-toggle").click(function() { toggle.flipMode(); }); </script> </span> <span class="icon-border"></span> <a href="https://github.com/2hanX" target="_blank"> <i class="fab fa-github-alt"></i> </a> <a href=" javascript:window.open('mailto:' + ['2501181146','qq.com'].join('@'))" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" > <i class="fas fa-rss"></i> </a></div></div><div id="topbar-wrapper" class="row justify-content-center topbar-down"><div id="topbar" class="col-11 d-flex h-100 align-items-center justify-content-between"> <span id="breadcrumb"> <span> <a href="/"> Posts </a> </span> <span>AES ECB 模式攻击</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> Post</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" placeholder="Search..."> <i class="fa fa-times-circle fa-fw" id="search-cleaner"></i> </span> <span id="search-cancel" >Cancel</span></div></div><div id="main-wrapper"><div id="main"><div class="row"><div id="post-wrapper" class="col-12 col-lg-11 col-xl-8"><div class="post pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><h1 data-toc-skip>AES ECB 模式攻击</h1><div class="post-meta text-muted d-flex flex-column"><div> Posted <span class="timeago " data-toggle="tooltip" data-placement="bottom" title="Mon, Sep 28, 2020, 12:00 AM +0800" > Sep 28 <i class="unloaded">2020-09-28T00:00:00+08:00</i> </span> by <span class="author"> 2hanx </span></div></div><div class="post-content"><p>对称/分组密码一般分为流加密(如OFB、CFB等)和块加密(如ECB、CBC等)，对于流加密，需要将分组密码转化为流模式工作；对于块加密(或称分组加密)，如果要加密超过块大小的数据，就需要涉及填充和链加密模式</p><p><strong>Advanced Encryption Standard（AES）</strong>高级加密标准，是典型的块加密，有5种加密模式，其中使用最广泛的是 ECB 模式</p><h2 id="ecb-模式加密过程">ECB 模式加密过程</h2><p>电码本模式（Electronic Codebook Book (ECB)）：这种模式是将整个明文分成若干段相同的小段，每组的大小跟加密密钥长度相同，然后每组都用相同的密钥进行加密</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_1.png" alt="1" /></p><p>其中明文分块长度一般为<strong>16</strong>,或16的倍数，并且当文明长度不足16，或16的倍数时，将会进行填充</p><h2 id="本地测试">本地测试</h2><p>使用 python twisted 库构建一个服务器程序</p><h3 id="服务器端代码">服务器端代码</h3><div class="language-python highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+</pre><td class="rouge-code"><pre><span class="c1">#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# filename: server.py
+</span><span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">reactor</span><span class="p">,</span> <span class="n">protocol</span>
+<span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="kn">import</span> <span class="n">AES</span>
+
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">8001</span>
+<span class="n">KEY</span> <span class="o">=</span> <span class="s">"@Ecb_aTTack&gt;esew"</span>
+<span class="n">SECRET</span> <span class="o">=</span> <span class="s">"flag{ese@qq!hooray}"</span>
+
+
+<span class="k">def</span> <span class="nf">encrypt_block</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">plaintext</span><span class="p">):</span>
+    <span class="s">"""
+    key: 相同的加密秘钥
+    plaintext: 相同长度的明文块
+    """</span>
+    <span class="n">encobj</span> <span class="o">=</span> <span class="n">AES</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="p">.</span><span class="n">MODE_ECB</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">encobj</span><span class="p">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">plaintext</span><span class="p">).</span><span class="n">encode</span><span class="p">(</span><span class="s">'hex'</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">encrypt</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ptxt</span><span class="p">):</span>
+    <span class="s">"""
+    ptxt: 输入的明文
+    如果明文块不满16B，则使用 * 号填充
+    """</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ptxt</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">ptxt</span> <span class="o">=</span> <span class="n">ptxt</span> <span class="o">+</span> <span class="s">"*"</span> <span class="o">*</span> <span class="p">(</span><span class="mi">16</span> <span class="o">-</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ptxt</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">encrypt_block</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ptxt</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">protocol</span><span class="p">.</span><span class="n">Protocol</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">connectionMade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">'''
+        Welcome to the AES_ECB Cryptography System
+        To encrypt, enter "encrypt [plaintext]". Ex, encrypt 123
+        1. cliphertext = plaintext + SECRET
+        2. this padding is *      
+        </span><span class="se">\r\n</span><span class="s">&gt;'''</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">transport</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dataReceived</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">.</span><span class="n">strip</span><span class="p">().</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">"encrypt"</span><span class="p">:</span>
+                <span class="c1"># 在用户输入的数据后面加上变量SECRET的值
+</span>                <span class="n">response</span> <span class="o">=</span> <span class="n">encrypt</span><span class="p">(</span><span class="n">KEY</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">SECRET</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">transport</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"&gt;"</span> <span class="o">+</span> <span class="n">response</span> <span class="o">+</span> <span class="s">"</span><span class="se">\r\n</span><span class="s">&gt;"</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">transport</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"&gt;Something is wrong here</span><span class="se">\r\n</span><span class="s">&gt;"</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">factory</span> <span class="o">=</span> <span class="n">protocol</span><span class="p">.</span><span class="n">ServerFactory</span><span class="p">()</span>
+    <span class="n">factory</span><span class="p">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">Server</span>
+    <span class="n">reactor</span><span class="p">.</span><span class="n">listenTCP</span><span class="p">(</span><span class="n">PORT</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
+    <span class="n">reactor</span><span class="p">.</span><span class="n">run</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></table></code></div></div><h3 id="确定-secret-长度">确定 SECRET 长度</h3><p>根据 ECB 的加密原理可以知道，相同的明文块加密后得到的也是相同的密文块。因此我们输入 <code class="language-plaintext highlighter-rouge">encrypt aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</code> ，得到的密文中 <code class="language-plaintext highlighter-rouge">4f41ee8a60e859118bd54bcfe6a23fc04f41ee8a60e859118bd54bcfe6a23fc04a4c43aa0d91f3a4906047558d0d55900a4ee9a08b34507e1440c7a261cd26a6</code>中<code class="language-plaintext highlighter-rouge">[1-32]</code>位与 <code class="language-plaintext highlighter-rouge">[33-64]</code> 位是相同的，并且可以知道 <code class="language-plaintext highlighter-rouge">SECRET </code> 的长度在 17-32 位之间，大致如下：</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_2.png" alt="2" /></p><p>当输入的 <code class="language-plaintext highlighter-rouge">a</code> 达到 14 位时，密文长度首次比之前增加了32位，可以得知明文块比之前多了一块，并且我们知道分块的明文长度是16位，因此在第3块明文块中的第一个即是 <code class="language-plaintext highlighter-rouge">SECRET </code>的最后一位，因此可以确认 <code class="language-plaintext highlighter-rouge">SECRET</code>长度为 <strong>19</strong></p><h3 id="爆破-secret-字符串">爆破 SECRET 字符串</h3><p>之前提到相同的明文块加密后的密文块相同，反应到密文就是会出现相同的一串字符。因此通过枚举加密，只要在密文首尾出现两段相同的字符串，我们就可以爆破出 <code class="language-plaintext highlighter-rouge">SECRET</code>。图示如下</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_3.png" alt="3" /></p><h3 id="exp">exp</h3><div class="language-python highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+</pre><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">host</span> <span class="o">=</span> <span class="s">'127.0.0.1'</span>
+<span class="n">port</span> <span class="o">=</span> <span class="mi">8001</span>
+
+
+<span class="k">def</span> <span class="nf">Tostr</span><span class="p">(</span><span class="n">st</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">st</span><span class="p">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s">'UTF8'</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="p">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">s</span>
+
+
+<span class="k">def</span> <span class="nf">getCliphertext</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="s">r"(&gt;)(.*?)(\r\n)"</span>
+    <span class="n">pattern1</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">pattern1</span><span class="p">.</span><span class="n">findall</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">get_pad_len</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">):</span>
+        <span class="n">payload1</span> <span class="o">=</span> <span class="s">"encrypt "</span> <span class="o">+</span> <span class="s">'a'</span> <span class="o">*</span> <span class="n">i</span>
+        <span class="n">s</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Tostr</span><span class="p">(</span><span class="n">payload1</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)).</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">getCliphertext</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">slen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">slen</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">forcerFlag</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">slen</span><span class="p">):</span>
+    <span class="n">padd</span> <span class="o">=</span> <span class="s">'a'</span> <span class="o">*</span> <span class="p">(</span><span class="n">slen</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">plaintext</span> <span class="o">=</span> <span class="s">""</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"start..."</span><span class="p">)</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="s">"`1234567890-=+qwertyuiop[]asdfghjkl;'zxcvbnm,./?&lt;&gt;!@#$%^&amp;*()QWERTYUIOP{}ASDFGHJKLZXCVBNM:"</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">19</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">array</span><span class="p">:</span>
+            <span class="n">payload2</span> <span class="o">=</span> <span class="s">"encrypt "</span> <span class="o">+</span> <span class="n">ch</span> <span class="o">+</span> <span class="n">plaintext</span> <span class="o">+</span> <span class="s">'*'</span> <span class="o">*</span> <span class="mi">15</span> <span class="o">+</span> <span class="n">padd</span>
+            <span class="n">s</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Tostr</span><span class="p">(</span><span class="n">payload2</span><span class="p">))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)).</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">getCliphertext</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">bp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>
+            <span class="n">sec</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">96</span><span class="p">:</span><span class="mi">128</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">bp</span> <span class="o">==</span> <span class="n">sec</span><span class="p">:</span>
+                <span class="n">plaintext</span> <span class="o">=</span> <span class="n">ch</span> <span class="o">+</span> <span class="n">plaintext</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">plaintext</span><span class="p">)</span>
+                <span class="k">break</span>
+    <span class="k">return</span> <span class="n">plaintext</span>
+
+
+<span class="k">def</span> <span class="nf">exp</span><span class="p">():</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">connect</span><span class="p">()</span>
+    <span class="n">slen</span> <span class="o">=</span> <span class="n">get_pad_len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">plaintext</span> <span class="o">=</span> <span class="n">forcerFlag</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">slen</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">plaintext</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">exp</span><span class="p">()</span>
+</pre></table></code></div></div><h2 id="实例-downunderctf-2020extra-cool-block-chaining-">实例： DownUnderCTF 2020（Extra Cool Block Chaining ）</h2><blockquote><p>Everyone knows ECB is broken because it lacks diffusion. That’s why I’ve come up with my own variant that uses IVs and chaining and all that cool stuff! It solves all the problems ECB had… I think</p></blockquote><h3 id="源码分析">源码分析</h3><div class="language-python highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+</pre><td class="rouge-code"><pre><span class="c1">#!/usr/bin/env python3
+</span><span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="kn">import</span> <span class="n">AES</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.Padding</span> <span class="kn">import</span> <span class="n">pad</span><span class="p">,</span> <span class="n">unpad</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.strxor</span> <span class="kn">import</span> <span class="n">strxor</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">urandom</span>
+
+<span class="n">flag</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'./flag.txt'</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">).</span><span class="n">read</span><span class="p">().</span><span class="n">strip</span><span class="p">()</span>
+<span class="n">KEY</span> <span class="o">=</span> <span class="n">urandom</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">IV</span> <span class="o">=</span> <span class="n">urandom</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">encrypt</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">):</span>
+    <span class="c1"># 填充16个字符
+</span>    <span class="n">msg</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">16</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">),</span> <span class="mi">16</span><span class="p">)]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="s">b''</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">blocks</span><span class="p">):</span>
+        <span class="c1"># 分块加密
+</span>        <span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="p">.</span><span class="n">MODE_ECB</span><span class="p">)</span>
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">cipher</span><span class="p">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">enc</span> <span class="o">=</span> <span class="n">strxor</span><span class="p">(</span><span class="n">enc</span><span class="p">,</span> <span class="n">out</span><span class="p">[</span><span class="o">-</span><span class="mi">16</span><span class="p">:])</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="n">enc</span>
+    <span class="c1"># 与 iv 异或
+</span>    <span class="k">return</span> <span class="n">strxor</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">iv</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">decrypt</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">iv</span><span class="p">):</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">16</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ct</span><span class="p">),</span> <span class="mi">16</span><span class="p">)]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="s">b''</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">blocks</span><span class="p">):</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">strxor</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">iv</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dec</span> <span class="o">=</span> <span class="n">strxor</span><span class="p">(</span><span class="n">dec</span><span class="p">,</span> <span class="n">ct</span><span class="p">[(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">16</span><span class="p">:</span><span class="n">i</span><span class="o">*</span><span class="mi">16</span><span class="p">])</span>
+        <span class="n">cipher</span> <span class="o">=</span> <span class="n">AES</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="p">.</span><span class="n">MODE_ECB</span><span class="p">)</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">cipher</span><span class="p">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="n">dec</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+<span class="n">flag_enc</span> <span class="o">=</span> <span class="n">encrypt</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">KEY</span><span class="p">,</span> <span class="n">IV</span><span class="p">).</span><span class="nb">hex</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">'Welcome! You get 1 block of encryption and 1 block of decryption.'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'Here is the ciphertext for some message you might like to read:'</span><span class="p">,</span> <span class="n">flag_enc</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s">'Enter plaintext to encrypt (hex): '</span><span class="p">))</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">pt</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span> <span class="c1"># only allow one block of encryption
+</span>    <span class="n">enc</span> <span class="o">=</span> <span class="n">encrypt</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">KEY</span><span class="p">,</span> <span class="n">IV</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">enc</span><span class="p">.</span><span class="nb">hex</span><span class="p">())</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'Invalid plaintext! :('</span><span class="p">)</span>
+    <span class="nb">exit</span><span class="p">()</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ct</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s">'Enter ciphertext to decrypt (hex): '</span><span class="p">))</span>
+    <span class="n">ct</span> <span class="o">=</span> <span class="n">ct</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span> <span class="c1"># only allow one block of decryption
+</span>    <span class="n">dec</span> <span class="o">=</span> <span class="n">decrypt</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">KEY</span><span class="p">,</span> <span class="n">IV</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">dec</span><span class="p">.</span><span class="nb">hex</span><span class="p">())</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'Invalid ciphertext! :('</span><span class="p">)</span>
+    <span class="nb">exit</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">'Goodbye! :)'</span><span class="p">)</span>
+</pre></table></code></div></div><h4 id="加密过程">加密过程</h4><p>根据 <code class="language-plaintext highlighter-rouge">encrypt(msg, key, iv)</code>加密函数，可以绘制出加密流程图</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_4.png" alt="4" /></p><h4 id="解密过程">解密过程</h4><p>同理根据 <code class="language-plaintext highlighter-rouge">decrypt(ct, key, iv)</code>解密函数绘制解密流程图</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_5.png" alt="5" /></p><p>但是根据加密流程可以发现解密流程有误，正确的解密流程应该是</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_6.png" alt="6" /></p><p>但幸运的是，我们可以解密首 <strong>16</strong> 字节的 flag，剩下的 flag 则需要知道 <strong>IV</strong> 才能破解出来。那么如何知道 <strong>IV</strong> 的值呢，我们把目光放在加密函数上，首先将传入的明文传入 <code class="language-plaintext highlighter-rouge">pad()</code>函数里来填充16个字符，并且 <code class="language-plaintext highlighter-rouge">pad()</code>函数使用 <a href="https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS#5_and_PKCS#7">PCKS#7</a> 填充</p><blockquote><p>每个添加的字节的值是添加的字节数，即 N 个字节，每个值 N 被添加，并且添加的字节数将取决于消息需要扩展到的块边界</p></blockquote><p>简而言之，AES 明文块为 16 位，填充的字节则是 <code class="language-plaintext highlighter-rouge">\x10</code>，大致如下</p><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7 " data-src="http://localhost:4000/assets/img/posts/aes-ecb-attack/aes-ecb-attack_7.png" alt="7" /></p><p>得到 <strong>IV</strong> 后根据正确的解密流程解密即可</p><h3 id="exp-1">exp</h3><div class="language-python highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+</pre><td class="rouge-code"><pre><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="n">remote</span><span class="p">,</span> <span class="n">xor</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util.Padding</span> <span class="kn">import</span> <span class="n">unpad</span>
+
+<span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">'chal.duc.tf'</span><span class="p">,</span> <span class="mi">30201</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">):</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">conn</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'[&lt;]'</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span>
+
+<span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'[&gt;]'</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">conn</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="n">flag</span> <span class="o">=</span> <span class="s">b''</span>
+
+<span class="c1">### retrieve first 16 bytes of the flag
+</span><span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">()</span>
+<span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+<span class="n">ciphertext</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="s">'read: '</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">num_blocks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ciphertext</span><span class="p">)</span><span class="o">//</span><span class="mi">32</span>
+<span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s">'aa'</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+<span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">[:</span><span class="mi">32</span><span class="p">])</span>
+<span class="n">flag</span> <span class="o">+=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="s">': '</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">conn</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">### retrieve rest of the flag
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">):</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">()</span>
+    <span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">ciphertext</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="s">'read: '</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># recover IV by sending b'\x10'*16
+</span>    <span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="p">(</span><span class="s">b'</span><span class="se">\x10</span><span class="s">'</span><span class="o">*</span><span class="mi">16</span><span class="p">).</span><span class="nb">hex</span><span class="p">())</span>
+    <span class="n">IV</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">).</span><span class="n">strip</span><span class="p">()[</span><span class="o">-</span><span class="mi">32</span><span class="p">:])</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">IV</span><span class="p">)</span>
+    <span class="n">to_decrypt</span> <span class="o">=</span> <span class="n">xor</span><span class="p">(</span><span class="n">xor</span><span class="p">(</span><span class="n">IV</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">[(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">16</span><span class="p">:</span><span class="n">i</span><span class="o">*</span><span class="mi">16</span><span class="p">]),</span> <span class="n">ciphertext</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">16</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">16</span><span class="p">])</span>
+    <span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">to_decrypt</span><span class="p">.</span><span class="nb">hex</span><span class="p">())</span>
+    <span class="n">flag</span> <span class="o">+=</span> <span class="nb">bytes</span><span class="p">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">recv</span><span class="p">(</span><span class="n">conn</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="s">': '</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">conn</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">'[*]'</span><span class="p">,</span> <span class="n">unpad</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="mi">16</span><span class="p">).</span><span class="n">decode</span><span class="p">())</span>
+</pre></table></code></div></div><h4 id="脚本执行过程">脚本执行过程</h4><div class="language-bash highlighter-rouge"><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+</pre><td class="rouge-code"><pre><span class="o">[</span>+] Opening connection to chal.duc.tf on port 30201: Done
+<span class="o">[</span>&lt;<span class="o">]</span> Welcome! You get 1 block of encryption and 1 block of decryption.
+
+<span class="o">[</span>&lt;<span class="o">]</span> Here is the ciphertext <span class="k">for </span>some message you might like to <span class="nb">read</span>: 5d830ed3e280998bb807d0f60013bad6f27ab6b27107976b34e4107cb22f5a266cfe50e975a9bec1131f0284db895b677142208f29429abcb3785213e5b32f3cafa9704586c7761921aa811d44f883fd384af5de40245506bfc4b8e64cc5ffa0
+
+<span class="o">[&gt;]</span> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+<span class="o">[</span>&lt;<span class="o">]</span> Enter plaintext to encrypt <span class="o">(</span>hex<span class="o">)</span>: b9570fb1e832c231e14288169866205c01491412b3f905c1eaa439f11e2d1484
+
+<span class="o">[&gt;]</span> 5d830ed3e280998bb807d0f60013bad6
+<span class="o">[</span>&lt;<span class="o">]</span> Enter ciphertext to decrypt <span class="o">(</span>hex<span class="o">)</span>: 44554354467b346444316e475f72346e
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Closed connection to chal.duc.tf port 30201
+<span class="o">[</span>+] Opening connection to chal.duc.tf on port 30201: Done
+<span class="o">[</span>&lt;<span class="o">]</span> Welcome! You get 1 block of encryption and 1 block of decryption.
+
+<span class="o">[</span>&lt;<span class="o">]</span> Here is the ciphertext <span class="k">for </span>some message you might like to <span class="nb">read</span>: a4c59f634603d276b78ac5fd03f4aeb93805e1b6e379d4fa2d36629aa91877341fdafa4f6b1db7f6a3b48810a6510a447f28b748421c84be8fac982b41fe4344c1c43d4503f56189cdef5d1c51817521f81247c4a8faa8dc5e191fb5465479a7
+
+<span class="o">[&gt;]</span> 10101010101010101010101010101010
+<span class="o">[</span>&lt;<span class="o">]</span> Enter plaintext to encrypt <span class="o">(</span>hex<span class="o">)</span>: e15de94fbf1b73d852631f679c4a25e5767722292750512a01ebd5c24b1f8c51
+
+b<span class="s1">'vw")\'</span>PQ<span class="k">*</span><span class="se">\x</span>01<span class="se">\x</span>eb<span class="se">\x</span>d5<span class="se">\x</span>c2K<span class="se">\x</span>1f<span class="se">\x</span>8cQ<span class="s1">'
+[&gt;] eab75cfc822a57a69b5772a5e1f355dc
+[&lt;] Enter ciphertext to decrypt (hex): 64304d5f3472523077735f344e445f78
+
+[*] Closed connection to chal.duc.tf port 30201
+[+] Opening connection to chal.duc.tf on port 30201: Done
+[&lt;] Welcome! You get 1 block of encryption and 1 block of decryption.
+
+[&lt;] Here is the ciphertext for some message you might like to read: 6ccbcd71d29a531e5be6cd1ad0551783072d281648132d5b1ba9cd29a742372d57bfa05002c691942a4f9f3d21bc644f24c5d4bb3ea06d9829c45073dec95ad0eefcbaee5c6f5cec990fa9293450994209246fd62c5030bc6567dcc3192918e5
+
+[&gt;] 10101010101010101010101010101010
+[&lt;] Enter plaintext to encrypt (hex): 9cc7bc6077827143dc026a61119b8f660b3171339bc1596d6097c4dadb7c55da
+
+b'</span><span class="se">\x</span>0b1q3<span class="se">\x</span>9b<span class="se">\x</span>c1Ym<span class="sb">`</span><span class="se">\x</span>97<span class="se">\x</span>c4<span class="se">\x</span>da<span class="se">\x</span>db|U<span class="se">\x</span>da<span class="s1">'
+[&gt;] 5ba3f975d114e5a2517196ce5d8206b8
+[&lt;] Enter ciphertext to decrypt (hex): 3052535f683372335f346e445f746833
+
+[*] Closed connection to chal.duc.tf port 30201
+[+] Opening connection to chal.duc.tf on port 30201: Done
+[&lt;] Welcome! You get 1 block of encryption and 1 block of decryption.
+
+[&lt;] Here is the ciphertext for some message you might like to read: eac44cf5ec0ddada0a33f9aa72ca89b32fbed72da06c33f3ca1ce02a58566ce9db97b3e8385089f7b42d3dbb492954ce03961c825cc50e67212611fbd76db1737d8d4c7f71d43a23680270916f02c376d4f6a9ec8946e55fba894d5af13e52fe
+
+[&gt;] 10101010101010101010101010101010
+[&lt;] Enter plaintext to encrypt (hex): aef912b471b823b529b3f115e988bd530312603bc0a2c7609026a1a979457d44
+
+b'</span><span class="se">\x</span>03<span class="se">\x</span>12<span class="sb">`</span><span class="p">;</span><span class="se">\x</span>c0<span class="se">\x</span>a2<span class="se">\x</span>c7<span class="sb">`</span><span class="se">\x</span>90&amp;<span class="se">\x</span>a1<span class="se">\x</span>a9yE<span class="o">}</span>D<span class="s1">'
+[&gt;] db13cf51a43740f0052d8de9e70198f9
+[&lt;] Enter ciphertext to decrypt (hex): 52335f553575344c6c795f48336c7073
+
+[*] Closed connection to chal.duc.tf port 30201
+[+] Opening connection to chal.duc.tf on port 30201: Done
+[&lt;] Welcome! You get 1 block of encryption and 1 block of decryption.
+
+[&lt;] Here is the ciphertext for some message you might like to read: a0ffe77a7c43995c6ee97a8bca3e97800a64e049e1b03792969cbab552fb0e0c2f36d41670c79a598e96efc3776906db4afc789c3e34b41f4c46cd3026391c3c367a6b16c3b545187186c8fe478b7b52dac9bd057fe2f034657c13a2f04b95c7
+
+[&gt;] 10101010101010101010101010101010
+[&lt;] Enter plaintext to encrypt (hex): 102f9320f56a35b473e1438e570c19281fe0709c507b44a7b8d8e5c660a592f2
+
+b'</span><span class="se">\x</span>1f<span class="se">\x</span>e0p<span class="se">\x</span>9cP<span class="o">{</span>D<span class="se">\x</span>a7<span class="se">\x</span>b8<span class="se">\x</span>d8<span class="se">\x</span>e5<span class="se">\x</span>c6<span class="sb">`</span><span class="se">\x</span>a5<span class="se">\x</span>92<span class="se">\x</span>f2<span class="s1">'
+[&gt;] 63666316adfab5a08518e0080117f59c
+[&lt;] Enter ciphertext to decrypt (hex): 5f4275375f6e30545f374831735f7431
+
+[*] Closed connection to chal.duc.tf port 30201
+[+] Opening connection to chal.duc.tf on port 30201: Done
+[&lt;] Welcome! You get 1 block of encryption and 1 block of decryption.
+
+[&lt;] Here is the ciphertext for some message you might like to read: 3f374fd9618743d1df13984a4b6447fde1e6d4b559db7e892ae7c36bb13a2d0bcbaaf9414c272e0f29a9a0bc6f9612101da89c989372c4ec7797ce9249d444ed1d2508544d46ec6ca3ef15a5684563f32a38eba5fc8d98e69b49ca74f04b17c6
+
+[&gt;] 10101010101010101010101010101010
+[&lt;] Enter plaintext to encrypt (hex): b7a06d05443fd44ff3dd5671d1f36e8e81807c524889c4ceedd00e4962fe42f5
+
+b'</span><span class="se">\x</span>81<span class="se">\x</span>80|RH<span class="se">\x</span>89<span class="se">\x</span>c4<span class="se">\x</span>ce<span class="se">\x</span>ed<span class="se">\x</span>d0<span class="se">\x</span>0eIb<span class="se">\x</span>feB<span class="se">\x</span>f5<span class="s1">'
+[&gt;] b69d9fa3f942b044d576d198faf036c0
+[&lt;] Enter ciphertext to decrypt (hex): 6d335f69375f7333336d7321217d0202
+
+[*] Closed connection to chal.duc.tf port 30201
+[*] DUCTF{4dD1nG_r4nd0M_4rR0ws_4ND_x0RS_h3r3_4nD_th3R3_U5u4Lly_H3lps_Bu7_n0T_7H1s_t1m3_i7_s33ms!!}
+</span></pre></table></code></div></div><h2 id="ref">Ref.</h2><ul><li><a href="https://www.jianshu.com/p/8aef410a2eae">本地测试原文</a><li><a href="https://www.josephsurin.me/posts/2020-09-20-downunderctf-2020-writeups#ecbc">ecbc writeup</a></ul></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/note/'>Note</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/ctf/" class="post-tag no-text-decoration" >ctf</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> This post is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> by the author.</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">Share</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=AES ECB 模式攻击 - 2hanX&url=http://localhost:4000/posts/aes-ecb-attack/" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=AES ECB 模式攻击 - 2hanX&u=http://localhost:4000/posts/aes-ecb-attack/" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://telegram.me/share?text=AES ECB 模式攻击 - 2hanX&url=http://localhost:4000/posts/aes-ecb-attack/" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank"> <i class="fa-fw fab fa-telegram"></i> </a> <i class="fa-fw fas fa-link small" onclick="copyLink()" data-toggle="tooltip" data-placement="top" title="Copy link"></i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted topbar-down"><div class="access"><div id="access-tags"><h3 data-toc-skip>Trending Tags</h3><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/wireshark/">wireshark</a> <a class="post-tag" href="/tags/note/">note</a> <a class="post-tag" href="/tags/software/">software</a> <a class="post-tag" href="/tags/registry/">registry</a> <a class="post-tag" href="/tags/writeups/">writeups</a> <a class="post-tag" href="/tags/reverse/">reverse</a> <a class="post-tag" href="/tags/ctf/">ctf</a></div></div></div><div id="toc-wrapper" class="pl-0 pr-4 mb-5"><h3 data-toc-skip class="pl-3 pt-2 mb-2">Contents</h3><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div class="col-12 col-lg-11 col-xl-8"><div id="post-extend-wrapper" class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-md-4 pr-md-4"><div id="related-posts" class="mt-5 mb-2 mb-sm-4"><h3 class="pt-2 mt-1 mb-4 ml-1" data-toc-skip>Further Reading</h3><div class="card-deck mb-4"><div class="card"> <a href="/posts/wireshark-extracting-images/"><div class="card-body"> <span class="timeago small" > Aug 28, 2019 <i class="unloaded">2019-08-28T13:39:44+08:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Wireshark 提取图像</h3><div class="text-muted small"><p> 描述 提供捕获到的流量数据包，其中包含邮件以及附件 要求 分析并从附件中提取图像并找到以下详细信息 图像的MD5值 地址 日期 步骤 在数据包很多的情况下，定位关键数据包的一种实用方法是查看TCP对话并根据传输字节大小进行排序，选择具有最大字节数的会话后，单击Follow Stream以打开该TCP流 1...</p></div></div></a></div><div class="card"> <a href="/posts/wireshark-Analysis-of-capture-files-containing-infected-traffic/"><div class="card-body"> <span class="timeago small" > Aug 28, 2019 <i class="unloaded">2019-08-28T17:34:10+08:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Wireshark 分析包含受感染流量的捕获文件</h3><div class="text-muted small"><p> 下载实验流量包 查看流量包中使用的协议 Statistics→ Protocol Hierarchy 查看受感染的IP地址 Statistics→ Conversations&lt;/p&gt; 显示过滤器：http.request1 如果跟踪文件包含任何DNS或DHCP流量，则可以通过过滤NBNS / DNS流量[dns.qry....</p></div></div></a></div><div class="card"> <a href="/posts/skycoder-writeup/"><div class="card-body"> <span class="timeago small" > Aug 30, 2019 <i class="unloaded">2019-08-30T07:59:55+08:00</i> </span><h3 class="pt-0 mt-1 mb-3" data-toc-skip>skycoder writeup</h3><div class="text-muted small"><p> 原题链接 查看文件中可识别字符得到三个有用信息 strings Begin Hack.jpg https://mega.nz/#!z8hACJbb!vQB569ptyQjNEoxIwHrUhwWu5WCj1JWmU-OFjf90Prg -N17hGnFBfJliykJxXu8 - real_unlock_key: Nothing Is As It Seems passwo...</p></div></div></a></div></div></div><div class="post-navigation d-flex justify-content-between"> <a href="/posts/tokyowesterns-ctf-writeups/" class="btn btn-outline-primary"><p>TokyoWesterns CTF Writeups</p></a> <a href="/posts/reversing_kr-writeups/" class="btn btn-outline-primary"><p>Reversing_kr Writeups</p></a></div></div></div></div><script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lozad/dist/lozad.min.js"></script> <script type="text/javascript"> const imgs = document.querySelectorAll('#post-wrapper img'); const observer = lozad(imgs); observer.observe(); </script><footer class="d-flex w-100 justify-content-center"><div class="d-flex justify-content-between align-items-center"><div class="footer-left"><p class="mb-0"> © 2019-2020 <a href="https://github.com/2hanx">2hanx</a> | <span data-toggle="tooltip" data-placement="top"> <a href="http://www.beian.miit.gov.cn" target='_blank'>粤ICP备19099805号</a></span></p></div><div class="footer-right"><p class="mb-0"> Powered by <a href="https://jekyllrb.com" target="_blank">Jekyll</a> with <a href="https://github.com/cotes2020/jekyll-theme-chirpy/">Chirpy</a> theme.</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-xl-11 post-content"><div id="search-hints"><h4 class="text-muted mb-4">Trending Tags</h4><a class="post-tag" href="/tags/wireshark/">wireshark</a> <a class="post-tag" href="/tags/note/">note</a> <a class="post-tag" href="/tags/software/">software</a> <a class="post-tag" href="/tags/registry/">registry</a> <a class="post-tag" href="/tags/writeups/">writeups</a> <a class="post-tag" href="/tags/reverse/">reverse</a> <a class="post-tag" href="/tags/ctf/">ctf</a></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a> <script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.7.3/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="http://localhost:4000{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"><div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>{categories}</div><div><i class="fa fa-tag fa-fw"></i>{tags}</div></div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">Oops! No result founds.</p>' }); </script>
