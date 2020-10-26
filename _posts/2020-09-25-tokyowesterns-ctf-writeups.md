@@ -4,7 +4,7 @@ title: "TokyoWesterns CTF Writeups"
 date: 2020-09-25
 author: 2hanx
 categories: [Writeups]
-tags: []
+tags: [ctf]
 ---
 
 ## urlcheck v1

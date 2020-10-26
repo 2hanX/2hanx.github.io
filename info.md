@@ -41,4 +41,14 @@ image: /assets/img/sample/devices-mockup.png
 ---
 ```
 
+### 启用latex需要注意的地方
 
+在latex代码首位出添加如下代理可以实现换行
+
+```latex
+\begin{aligned}
+...
+\end{aligned}
+```
+
+此外单行渲染需要添加两个`$$`,并且上下文需隔开一个空行
