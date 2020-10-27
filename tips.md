@@ -52,3 +52,5 @@ image: /assets/img/sample/devices-mockup.png
 ```
 
 此外单行渲染需要添加两个`$$`,并且上下文需隔开一个空行
+
+每次上传到 GitHub 时，最好删除 `.jekyll-cache` 文件夹
