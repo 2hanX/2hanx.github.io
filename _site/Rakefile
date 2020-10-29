@@ -36,6 +36,7 @@ task :post do
     post.puts "title: \"#{title.gsub(/-/,' ')}\""
     post.puts "date: #{date}"
     post.puts "author: 2hanx"
+    post.puts "toc: true"
     post.puts "categories: []"
     post.puts "tags: []"
     post.puts "---"
