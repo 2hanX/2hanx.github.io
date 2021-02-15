@@ -63,6 +63,6 @@ image: /assets/img/sample/devices-mockup.png
 
 ### 其他
 
-1. 每次上传到 GitHub 时，最好删除 `.jekyll-cache` 文件夹
-2. 修改单个已发布文章可以不用进行本地编译，直接上传即可
+1. 每次上传到 GitHub 时，最好删除 `.jekyll-cache` 文件夹，但最佳的操作是在根目录添加`.gitignore`文件，并将 `.jekyll-cache/` 写入文件即可
+2. 修改单个已发布文章或新增文章时都可以不用进行本地编译，直接上传即可
 
