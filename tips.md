@@ -61,6 +61,19 @@ image: /assets/img/sample/devices-mockup.png
 
 此外单行渲染需要添加两个`$$`,并且上下文需隔开一个空行
 
+### 本地部署
+
+1. 安装主题
+
+  ```
+  gem install jekyll-theme-chirpy -v 6.4.2
+  ```
+2. 本地运行
+
+  ```
+  bundle exec jekyll s
+  ```
+
 ### 其他
 
 1. 每次上传到 GitHub 时，最好删除 `.jekyll-cache` 文件夹，但最佳的操作是在根目录添加`.gitignore`文件，并将 `.jekyll-cache/` 写入文件即可
