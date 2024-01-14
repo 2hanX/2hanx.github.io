@@ -1,8 +1,41 @@
 ---
-# the default layout is 'page'
+title: About
 icon: fas fa-info-circle
 order: 4
+
 ---
 
-> Add Markdown syntax content to file `_tabs/about.md`{: .filepath } and it will show up on this page.
-{: .prompt-tip }
+男，95后，信息安全专业
+
+一级菜鸟
+<br>
+在线被虐
+<br> 
+很是心塞 
+<br> 
+(´-ι_-｀)
+<br>
+
+ID: isok
+
+公众号：安阅楼
+
+
+![公众号]({{ 'https://wxchat-1307785480.cos.ap-guangzhou.myqcloud.com/wechat/202401142118934.jpg' }})
+
+---
+
+## Event
+
+- 2019.12
+
+  作为一位 ctf 萌新，一个人从广西坐飞机到西安去参加 3CTF 大赛线下决赛，心里是十分激动。这一趟旅行不仅可以和其他选手同台竞技，也可以去参观西安电子科技大学。所幸最后结果也挺好的，凭着运气获得三等奖，看到大佬疯狂秀操作，也看到自己的菜鸟水平，总之还需继续努力呀。。。
+
+![1]({{ '/about/3ctf.jpg' | prepend: site.url }})
+
+- 2020.1
+
+  因 3CTF 举办方提供的内推渠道，第一次实习进入长亭科技公司，来到打ctf 比赛出身的公司也挺激动的。那工作环境没得说，公司包午餐+晚餐、弹性工作制、住房补贴等，并且公司里牛人多多。在实习培训期间也进行过 Web Server 实现、负载均衡、Docker compose 构建项目等，每天可以感受到自己的进步，但是又因为疫情在家办公也挺郁闷的。
+
+  ![2]({{ '/about/shixi.jpg' | prepend: site.url }})
+
