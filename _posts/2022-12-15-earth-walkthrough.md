@@ -4,7 +4,7 @@ title: "Earth walkthrough"
 date: 2022-12-15
 author: 2hanx
 toc: true
-categories: []
+categories: [Vulnhub]
 tags: []
 ---
 
